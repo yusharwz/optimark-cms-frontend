@@ -11,6 +11,8 @@ import {
   Edit01,
   Trash01,
   Send01,
+  Globe01,
+  Eye,
 } from '@untitledui/icons';
 import { api } from '@/lib/api';
 import { Article, ArticleStatus } from '@/lib/types';
@@ -166,6 +168,17 @@ export default function ArticlesPage() {
             >
               Draft
             </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('ARCHIVED')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                statusFilter === 'ARCHIVED'
+                  ? 'bg-amber-600 text-white shadow-xs'
+                  : 'bg-amber-50 text-amber-700 hover:bg-amber-100'
+              }`}
+            >
+              Archived
+            </button>
           </div>
 
           <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
@@ -235,8 +248,24 @@ export default function ArticlesPage() {
                           >
                             {item.title}
                           </Link>
-                          <div className="text-[11px] text-[#717680] font-mono mt-0.5 truncate">
-                            /blog/{item.slug}
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[11px] text-[#717680] font-mono truncate">
+                              /blog/{item.slug}
+                            </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#f2f4f7] text-[#344054]" title="Versi Bahasa Indonesia">
+                                ID
+                              </span>
+                              {item.translations?.some((t) => t.locale === 'en' && t.title) ? (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title="Versi English Tersedia">
+                                  EN
+                                </span>
+                              ) : (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-slate-50 text-slate-400" title="English Belum Lengkap">
+                                  EN
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -273,24 +302,46 @@ export default function ArticlesPage() {
                             ? 'bg-[#ecfdf3] text-[#079455] border border-[#abefc6]'
                             : item.status === 'SCHEDULED'
                             ? 'bg-[#fffaeb] text-[#dc6803] border border-[#fedf89]'
+                            : item.status === 'ARCHIVED'
+                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
                             : 'bg-[#f2f5f9] text-[#465984] border border-[#c6d2e6]'
                         }`}
                       >
                         {item.status === 'PUBLISHED' && <CheckCircle className="size-3 text-[#079455]" />}
                         {item.status === 'SCHEDULED' && <Clock className="size-3 text-[#dc6803]" />}
+                        {item.status === 'ARCHIVED' && <Clock className="size-3 text-amber-700" />}
                         {item.status === 'DRAFT' && <Edit01 className="size-3 text-[#465984]" />}
                         <span>{item.status}</span>
                       </span>
                     </td>
 
                     <td className="py-3.5 px-4 text-[#535862]">
-                      {item.status === 'SCHEDULED'
-                        ? formatDate(item.scheduledAt)
-                        : formatDate(item.publishedAt || item.createdAt)}
+                      <div>
+                        {item.status === 'SCHEDULED'
+                          ? formatDate(item.scheduledAt)
+                          : formatDate(item.publishedAt || item.createdAt)}
+                      </div>
+                      {item.contentUpdatedAt && (
+                        <div className="text-[10px] text-[#717680] mt-0.5 flex items-center gap-1 font-mono">
+                          <span>lastmod:</span>
+                          <span>{new Date(item.contentUpdatedAt).toLocaleDateString('id-ID')}</span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="inline-flex items-center gap-1.5">
+                        {item.status === 'PUBLISHED' && (
+                          <a
+                            href={`http://localhost:3000/blog/${item.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Buka artikel live di Landing Page"
+                            className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#535862] transition cursor-pointer"
+                          >
+                            <Eye className="size-3.5 text-[#465984]" />
+                          </a>
+                        )}
                         {item.status !== 'PUBLISHED' && (
                           <button
                             type="button"

@@ -34,6 +34,17 @@ export interface Person {
   };
 }
 
+export interface ArticleTranslation {
+  id?: string;
+  articleId?: string;
+  locale: 'id' | 'en';
+  title: string;
+  excerpt?: string | null;
+  content: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+}
+
 export interface Article {
   id: string;
   title: string;
@@ -62,6 +73,7 @@ export interface Article {
   author?: Person | null;
   reviewerId?: string | null;
   reviewer?: Person | null;
+  translations?: ArticleTranslation[];
 }
 
 export interface CommentItem {

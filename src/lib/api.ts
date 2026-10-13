@@ -64,13 +64,13 @@ export const api = {
 
   getArticle: (id: string) => request<Article>(`/articles/${id}`),
 
-  createArticle: (data: Partial<Article>) =>
+  createArticle: (data: any) =>
     request<Article>('/articles', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  updateArticle: (id: string, data: Partial<Article>) =>
+  updateArticle: (id: string, data: any) =>
     request<Article>(`/articles/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),

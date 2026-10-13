@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   AlertCircle,
   CheckCircle,
+  Globe01,
 } from '@untitledui/icons';
 import { api } from '@/lib/api';
 import { Article, Category, Person, TocItem } from '@/lib/types';
@@ -30,15 +31,29 @@ interface ArticleEditorProps {
 export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const router = useRouter();
 
-  // Basic Fields
-  const [title, setTitle] = useState(initialData?.title || '');
-  const [slug, setSlug] = useState(initialData?.slug || '');
-  const [excerpt, setExcerpt] = useState(initialData?.excerpt || '');
-  const [content, setContent] = useState(initialData?.content || '');
+  // Translations Extraction from initialData
+  const initialId = initialData?.translations?.find((t) => t.locale === 'id');
+  const initialEn = initialData?.translations?.find((t) => t.locale === 'en');
 
-  // SEO Fields
-  const [metaTitle, setMetaTitle] = useState(initialData?.metaTitle || '');
-  const [metaDescription, setMetaDescription] = useState(initialData?.metaDescription || '');
+  // Active locale tab ('id' | 'en')
+  const [activeLocale, setActiveLocale] = useState<'id' | 'en'>('id');
+
+  // ID Locale Fields
+  const [titleId, setTitleId] = useState(initialId?.title || initialData?.title || '');
+  const [excerptId, setExcerptId] = useState(initialId?.excerpt || initialData?.excerpt || '');
+  const [contentId, setContentId] = useState(initialId?.content || initialData?.content || '');
+  const [metaTitleId, setMetaTitleId] = useState(initialId?.metaTitle || initialData?.metaTitle || '');
+  const [metaDescriptionId, setMetaDescriptionId] = useState(initialId?.metaDescription || initialData?.metaDescription || '');
+
+  // EN Locale Fields
+  const [titleEn, setTitleEn] = useState(initialEn?.title || '');
+  const [excerptEn, setExcerptEn] = useState(initialEn?.excerpt || '');
+  const [contentEn, setContentEn] = useState(initialEn?.content || '');
+  const [metaTitleEn, setMetaTitleEn] = useState(initialEn?.metaTitle || '');
+  const [metaDescriptionEn, setMetaDescriptionEn] = useState(initialEn?.metaDescription || '');
+
+  // Shared Core Fields
+  const [slug, setSlug] = useState(initialData?.slug || '');
   const [canonicalUrl, setCanonicalUrl] = useState(initialData?.canonicalUrl || '');
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl || '');
   const [coverImageAlt, setCoverImageAlt] = useState(initialData?.coverImageAlt || '');
@@ -51,8 +66,8 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const [featured, setFeatured] = useState(initialData?.featured || false);
 
   // Status & Publishing
-  const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED' | 'SCHEDULED'>(
-    initialData?.status === 'SCHEDULED' ? 'SCHEDULED' : initialData?.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
+  const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED'>(
+    initialData?.status || 'DRAFT'
   );
   const [scheduledAt, setScheduledAt] = useState(
     initialData?.scheduledAt ? new Date(initialData.scheduledAt).toISOString().slice(0, 16) : ''
@@ -77,15 +92,46 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
       .catch((err) => console.error('Failed to load taxonomy:', err));
   }, []);
 
+  // Current values based on activeLocale
+  const currentTitle = activeLocale === 'id' ? titleId : titleEn;
+  const currentExcerpt = activeLocale === 'id' ? excerptId : excerptEn;
+  const currentContent = activeLocale === 'id' ? contentId : contentEn;
+  const currentMetaTitle = activeLocale === 'id' ? metaTitleId : metaTitleEn;
+  const currentMetaDesc = activeLocale === 'id' ? metaDescriptionId : metaDescriptionEn;
+
   const handleTitleChange = (val: string) => {
-    setTitle(val);
-    if (!initialData && (!slug || slug === '')) {
-      const autoSlug = val
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-      setSlug(autoSlug);
+    if (activeLocale === 'id') {
+      setTitleId(val);
+      if (!initialData && (!slug || slug === '')) {
+        const autoSlug = val
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+        setSlug(autoSlug);
+      }
+    } else {
+      setTitleEn(val);
     }
+  };
+
+  const handleExcerptChange = (val: string) => {
+    if (activeLocale === 'id') setExcerptId(val);
+    else setExcerptEn(val);
+  };
+
+  const handleContentChange = (val: string) => {
+    if (activeLocale === 'id') setContentId(val);
+    else setContentEn(val);
+  };
+
+  const handleMetaTitleChange = (val: string) => {
+    if (activeLocale === 'id') setMetaTitleId(val);
+    else setMetaTitleEn(val);
+  };
+
+  const handleMetaDescChange = (val: string) => {
+    if (activeLocale === 'id') setMetaDescriptionId(val);
+    else setMetaDescriptionEn(val);
   };
 
   const insertFormatting = (prefix: string, suffix: string = '') => {
@@ -94,31 +140,28 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const selection = content.substring(start, end);
+    const selection = currentContent.substring(start, end);
     const replacement = `${prefix}${selection || 'Teks'}${suffix}`;
 
-    const newContent = content.substring(0, start) + replacement + content.substring(end);
-    setContent(newContent);
+    const newContent = currentContent.substring(0, start) + replacement + currentContent.substring(end);
+    handleContentChange(newContent);
 
     setTimeout(() => {
       textarea.focus();
-      textarea.setSelectionRange(start + prefix.length, start + replacement.length - suffix.length);
-    }, 50);
+      textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+    }, 0);
   };
 
+  // Image Upload Handler to Cloudflare R2
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadingImage(true);
     try {
-      setUploadingImage(true);
-      setMessage(null);
-      const res = await api.uploadMedia(file, coverImageAlt || title || file.name, true);
-      setCoverImageUrl(res.url);
-      if (!coverImageAlt) {
-        setCoverImageAlt(res.altText || title);
-      }
-      setMessage({ type: 'success', text: 'Gambar berhasil diupload dan dikonversi ke WebP di Cloudflare R2.' });
+      const media = await api.uploadMedia(file, coverImageAlt || currentTitle || 'Cover Image');
+      setCoverImageUrl(media.url);
+      setMessage({ type: 'success', text: 'Gambar berhasil diunggah ke storage Cloudflare R2!' });
     } catch (err: any) {
       setMessage({ type: 'error', text: err.message || 'Gagal mengunggah gambar' });
     } finally {
@@ -126,110 +169,168 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
     }
   };
 
-  const extractClientToc = (rawContent: string): TocItem[] => {
-    if (!rawContent) return [];
-    const lines = rawContent.split('\n');
-    const items: TocItem[] = [];
-    for (const line of lines) {
-      const match = line.trim().match(/^(#{1,4})\s+(.+)$/);
-      if (match) {
-        const level = match[1].length;
-        const text = match[2].replace(/[*_`]/g, '').trim();
-        const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        items.push({ id, level, text });
-      }
-    }
-    return items;
-  };
+  // Save / Publish submit logic
+  const handleSubmit = async (targetStatus?: 'DRAFT' | 'PUBLISHED') => {
+    const finalStatus = targetStatus || status;
 
-  const detectedToc = extractClientToc(content);
-
-  const handleSubmit = async (publishDirectly = false) => {
-    if (!title.trim()) {
-      setMessage({ type: 'error', text: 'Judul artikel wajib diisi.' });
+    if (!titleId && !titleEn) {
+      setMessage({ type: 'error', text: 'Judul artikel wajib diisi (minimal Bahasa Indonesia)!' });
       return;
     }
-    if (!content.trim()) {
-      setMessage({ type: 'error', text: 'Konten artikel wajib diisi.' });
+
+    if (!slug) {
+      setMessage({ type: 'error', text: 'Slug URL wajib diisi!' });
       return;
     }
+
+    const cleanSlug = slug
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+    setIsSubmitting(true);
+    setMessage(null);
+
+    const tags = tagsInput
+      ? tagsInput.split(',').map((t) => t.trim()).filter(Boolean)
+      : [];
+
+    const payload = {
+      title: titleId || titleEn,
+      slug: cleanSlug,
+      excerpt: excerptId || excerptEn || undefined,
+      content: contentId || contentEn,
+      metaTitle: metaTitleId || metaTitleEn || undefined,
+      metaDescription: metaDescriptionId || metaDescriptionEn || undefined,
+      canonicalUrl: canonicalUrl || undefined,
+      coverImageUrl: coverImageUrl || undefined,
+      coverImageAlt: coverImageAlt || undefined,
+      tags,
+      categoryId: categoryId || undefined,
+      authorId: authorId || undefined,
+      reviewerId: reviewerId || undefined,
+      featured,
+      status: finalStatus,
+      scheduledAt: finalStatus === 'SCHEDULED' && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+      translations: {
+        id: {
+          title: titleId || titleEn,
+          excerpt: excerptId || excerptEn || undefined,
+          content: contentId || contentEn,
+          metaTitle: metaTitleId || metaTitleEn || undefined,
+          metaDescription: metaDescriptionId || metaDescriptionEn || undefined,
+        },
+        en: {
+          title: titleEn || titleId,
+          excerpt: excerptEn || excerptId || undefined,
+          content: contentEn || contentId,
+          metaTitle: metaTitleEn || metaTitleId || undefined,
+          metaDescription: metaDescriptionEn || metaDescriptionId || undefined,
+        },
+      },
+    };
 
     try {
-      setIsSubmitting(true);
-      setMessage(null);
-
-      const finalStatus = publishDirectly ? 'PUBLISHED' : status;
-      const tags = tagsInput
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean);
-
-      const payload: Partial<Article> = {
-        title,
-        slug: slug.trim() || undefined,
-        excerpt: excerpt.trim() || undefined,
-        content,
-        metaTitle: metaTitle.trim() || undefined,
-        metaDescription: metaDescription.trim() || undefined,
-        canonicalUrl: canonicalUrl.trim() || undefined,
-        coverImageUrl: coverImageUrl.trim() || undefined,
-        coverImageAlt: coverImageAlt.trim() || undefined,
-        tags,
-        status: finalStatus,
-        featured,
-        categoryId: categoryId || undefined,
-        authorId: authorId || undefined,
-        reviewerId: reviewerId || undefined,
-        scheduledAt: finalStatus === 'SCHEDULED' && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
-        publishedAt: finalStatus === 'PUBLISHED' ? new Date().toISOString() : undefined,
-      };
-
       if (initialData?.id) {
         await api.updateArticle(initialData.id, payload);
-        setMessage({ type: 'success', text: 'Artikel berhasil diperbarui.' });
+        setMessage({
+          type: 'success',
+          text: 'Artikel berhasil diperbarui & disinkronkan ke Landing Page serta Sitemap XML!',
+        });
       } else {
         const created = await api.createArticle(payload);
-        setMessage({ type: 'success', text: 'Artikel berhasil disimpan!' });
-        router.push(`/articles/${created.id}`);
+        setMessage({
+          type: 'success',
+          text: 'Artikel baru berhasil dibuat & disinkronkan ke Landing Page serta Sitemap XML!',
+        });
+        setTimeout(() => router.push(`/articles/${created.id}`), 1200);
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Gagal menyimpan artikel.' });
+      setMessage({ type: 'error', text: err.message || 'Gagal menyimpan artikel' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
-      {/* Top Banner & Navigation */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/articles"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#535862] hover:text-[#181d27] transition-colors"
-        >
-          <ArrowLeft className="size-3.5" />
-          <span>Kembali ke Daftar Artikel</span>
-        </Link>
+  // Reading time & word count for active locale
+  const wordCount = currentContent.trim() ? currentContent.trim().split(/\s+/).length : 0;
+  const readMinutes = Math.max(1, Math.ceil(wordCount / 200));
 
+  // Validation status for languages
+  const hasIdContent = Boolean(titleId.trim() && contentId.trim());
+  const hasEnContent = Boolean(titleEn.trim() && contentEn.trim());
+
+  return (
+    <div className="space-y-6 pb-20">
+      {/* Top Header & Actions Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-5 border-b border-[#eaecf0]">
         <div className="flex items-center gap-3">
+          <Link
+            href="/articles"
+            className="p-2 text-[#535862] hover:text-[#181d27] hover:bg-[#f8f9fa] rounded-lg transition-colors border border-[#d5d7da]"
+          >
+            <ArrowLeft className="size-5" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold text-[#181d27]">
+                {initialData ? 'Edit Artikel Blog' : 'Tulis Artikel Baru'}
+              </h1>
+              <span
+                className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                  status === 'PUBLISHED'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : status === 'SCHEDULED'
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : status === 'ARCHIVED'
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-[#f8f9fa] text-[#535862] border border-[#d5d7da]'
+                }`}
+              >
+                {status}
+              </span>
+            </div>
+            <p className="text-xs text-[#535862] mt-0.5">
+              Kelola konten dwibahasa (ID & EN), E-E-A-T persona, dan sinkronisasi sitemap XML otomatis.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5 self-end sm:self-auto">
+          {initialData?.contentUpdatedAt && (
+            <div className="hidden lg:flex items-center gap-1.5 text-xs text-[#535862] bg-[#f8f9fa] border border-[#eaecf0] px-3 py-1.5 rounded-lg">
+              <Clock className="size-3.5 text-[#717680]" />
+              <span>
+                Lastmod:{' '}
+                <strong className="text-[#181d27]">
+                  {new Date(initialData.contentUpdatedAt).toLocaleString('id-ID', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                  })}
+                </strong>
+              </span>
+            </div>
+          )}
+
           <button
             type="button"
-            onClick={() => handleSubmit(false)}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-[#d5d7da] bg-white hover:bg-[#f9fafb] text-[#344054] text-xs font-semibold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+            onClick={() => handleSubmit('DRAFT')}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-[#414651] bg-white border border-[#d5d7da] hover:bg-[#f8f9fa] rounded-lg shadow-xs transition-colors disabled:opacity-50"
           >
-            <Save01 className="size-4 text-[#717680]" />
-            <span>{isSubmitting ? 'Menyimpan...' : 'Simpan Draft'}</span>
+            <Save01 className="size-4 text-[#535862]" />
+            Simpan Draft
           </button>
 
           <button
             type="button"
-            onClick={() => handleSubmit(true)}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#465984] hover:bg-[#3f5077] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+            onClick={() => handleSubmit('PUBLISHED')}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-[#465984] hover:bg-[#38476a] rounded-lg shadow-xs transition-colors disabled:opacity-50"
           >
-            <Send01 className="size-4 text-white" />
-            <span>Publish Sekarang</span>
+            <Send01 className="size-4" />
+            {status === 'PUBLISHED' ? 'Update & Sync' : 'Publish Sekarang'}
           </button>
         </div>
       </div>
@@ -237,89 +338,194 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
       {/* Alert Notification */}
       {message && (
         <div
-          className={`p-4 rounded-xl flex items-center gap-3 text-xs font-medium ${
+          className={`p-4 rounded-xl flex items-start gap-3 border ${
             message.type === 'success'
-              ? 'bg-[#ecfdf3] text-[#079455] border border-[#abefc6]'
-              : 'bg-[#fef3f2] text-[#d92d20] border border-[#fecdca]'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : 'bg-red-50 border-red-200 text-red-800'
           }`}
         >
           {message.type === 'success' ? (
-            <CheckCircle className="size-4 text-[#079455] shrink-0" />
+            <CheckCircle className="size-5 shrink-0 text-emerald-600 mt-0.5" />
           ) : (
-            <AlertCircle className="size-4 text-[#d92d20] shrink-0" />
+            <AlertCircle className="size-5 shrink-0 text-red-600 mt-0.5" />
           )}
-          <span>{message.text}</span>
+          <div className="text-sm font-medium leading-relaxed">{message.text}</div>
         </div>
       )}
 
-      {/* Main Grid: Left Editor & Right SEO Sidebar */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (8 cols): Editor */}
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Language Tabs + Content Editor (8 Cols) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* Article Title Card */}
-          <div className="bg-white p-6 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-[#344054] uppercase tracking-wider mb-1.5">
-                Judul Artikel (H1 Utama)
-              </label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="Misal: Panduan Lengkap Strategi SEO Berbasis AI untuk 2026"
-                className="w-full text-xl font-bold text-[#181d27] border border-[#d5d7da] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#465984] transition"
-              />
+          {/* Language Selector Header */}
+          <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#535862] uppercase tracking-wider flex items-center gap-1.5">
+                <Globe01 className="size-4 text-[#465984]" />
+                Bahasa Konten
+              </span>
+              <span className="text-xs text-[#717680]">• Pilih tab untuk mengedit copy lokal</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#344054] uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>Custom Slug / URL</span>
-                  {initialData?.slug && initialData.slug !== slug && (
-                    <span className="text-[11px] text-[#dc6803] font-medium lowercase">
-                      *301 redirect otomatis dibuat
-                    </span>
-                  )}
-                </label>
-                <div className="flex rounded-xl border border-[#d5d7da] overflow-hidden focus-within:ring-2 focus-within:ring-[#465984]">
-                  <span className="bg-[#f9fafb] px-3 py-2 text-xs text-[#717680] select-none flex items-center border-r border-[#d5d7da] font-mono">
-                    /blog/
-                  </span>
-                  <input
-                    type="text"
-                    value={slug}
-                    onChange={(e) => setSlug(e.target.value)}
-                    placeholder="panduan-seo-ai-2026"
-                    className="w-full px-3 py-2 text-xs text-[#181d27] focus:outline-none font-mono"
-                  />
-                </div>
-              </div>
+            <div className="flex items-center gap-2 bg-[#f8f9fa] p-1 rounded-lg border border-[#eaecf0]">
+              <button
+                type="button"
+                onClick={() => setActiveLocale('id')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                  activeLocale === 'id'
+                    ? 'bg-white text-[#181d27] shadow-xs font-semibold'
+                    : 'text-[#535862] hover:text-[#181d27]'
+                }`}
+              >
+                <span>🇮🇩</span>
+                <span>Bahasa Indonesia</span>
+                {hasIdContent && (
+                  <span className="size-1.5 rounded-full bg-emerald-500 ml-0.5" title="Konten ID Terisi" />
+                )}
+              </button>
 
-              <div>
-                <label className="block text-xs font-semibold text-[#344054] uppercase tracking-wider mb-1.5">
-                  Ringkasan / Excerpt
-                </label>
-                <input
-                  type="text"
-                  value={excerpt}
-                  onChange={(e) => setExcerpt(e.target.value)}
-                  placeholder="Ringkasan singkat artikel untuk preview feed dan meta fallback"
-                  className="w-full px-3 py-2 border border-[#d5d7da] rounded-xl text-xs text-[#181d27] focus:outline-none focus:ring-2 focus:ring-[#465984]"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveLocale('en')}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                  activeLocale === 'en'
+                    ? 'bg-white text-[#181d27] shadow-xs font-semibold'
+                    : 'text-[#535862] hover:text-[#181d27]'
+                }`}
+              >
+                <span>🇬🇧</span>
+                <span>English</span>
+                {hasEnContent ? (
+                  <span className="size-1.5 rounded-full bg-emerald-500 ml-0.5" title="Konten EN Terisi" />
+                ) : (
+                  <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 rounded font-normal">
+                    Draft
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Content Writing Area with Formatting Bar */}
-          <div className="bg-white rounded-2xl border border-[#eaecf0] shadow-xs overflow-hidden">
-            {/* Tab Header & Toolbar */}
-            <div className="p-3 bg-[#fafafa] border-b border-[#eaecf0] flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-[#eaecf0] text-xs font-semibold">
+          {/* Title Input */}
+          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-semibold text-[#181d27]">
+                Judul Artikel ({activeLocale === 'id' ? 'Bahasa Indonesia' : 'English'}) <span className="text-red-500">*</span>
+              </label>
+              <span className="text-xs text-[#717680]">
+                {currentTitle.length} karakter
+              </span>
+            </div>
+            <input
+              type="text"
+              value={currentTitle}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder={
+                activeLocale === 'id'
+                  ? 'Contoh: Panduan Riset Keyword SEO untuk Bisnis Lokal 2026'
+                  : 'Example: Local Business Keyword Research Guide for 2026'
+              }
+              className="w-full px-3.5 py-2.5 text-base font-medium border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden"
+            />
+
+            {/* Excerpt Input */}
+            <div className="pt-2 space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">
+                Ringkasan Artikel (Excerpt)
+              </label>
+              <textarea
+                rows={2}
+                value={currentExcerpt}
+                onChange={(e) => handleExcerptChange(e.target.value)}
+                placeholder={
+                  activeLocale === 'id'
+                    ? 'Ringkasan singkat 1-2 kalimat untuk kartu artikel blog dan cuplikan media sosial...'
+                    : 'Short 1-2 sentence excerpt for blog cards and social previews...'
+                }
+                className="w-full px-3.5 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden"
+              />
+            </div>
+          </div>
+
+          {/* Markdown Content Editor */}
+          <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
+            {/* Editor Toolbar & Tab Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 border-b border-[#eaecf0] bg-[#fafafa]">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('## ')}
+                  title="Heading 2"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded font-bold text-xs"
+                >
+                  H2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('### ')}
+                  title="Heading 3"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded font-bold text-xs"
+                >
+                  H3
+                </button>
+                <div className="w-px h-4 bg-[#d5d7da] mx-1" />
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('**', '**')}
+                  title="Bold"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded"
+                >
+                  <Bold01 className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('*', '*')}
+                  title="Italic"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded"
+                >
+                  <Italic01 className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('- ')}
+                  title="Bullet List"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded"
+                >
+                  <List className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('> ')}
+                  title="Quote Block"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded font-serif italic text-sm"
+                >
+                  &quot;&quot;
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('> **Catatan:** ')}
+                  title="Callout Box"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded text-xs font-medium"
+                >
+                  Callout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => insertFormatting('[Tautan](', ')')}
+                  title="Link"
+                  className="p-1.5 text-[#535862] hover:text-[#181d27] hover:bg-[#eaecf0] rounded"
+                >
+                  <Link01 className="size-4" />
+                </button>
+              </div>
+
+              {/* Write vs Preview Toggle */}
+              <div className="flex items-center gap-1 bg-[#eaecf0] p-1 rounded-lg">
                 <button
                   type="button"
                   onClick={() => setActiveTab('write')}
-                  className={`px-3 py-1.5 rounded-md transition-colors cursor-pointer ${
-                    activeTab === 'write' ? 'bg-[#465984] text-white shadow-xs' : 'text-[#535862] hover:text-[#181d27]'
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === 'write' ? 'bg-white text-[#181d27] shadow-xs' : 'text-[#535862]'
                   }`}
                 >
                   Tulis Markdown
@@ -327,351 +533,229 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                 <button
                   type="button"
                   onClick={() => setActiveTab('preview')}
-                  className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'preview' ? 'bg-[#465984] text-white shadow-xs' : 'text-[#535862] hover:text-[#181d27]'
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                    activeTab === 'preview' ? 'bg-white text-[#181d27] shadow-xs' : 'text-[#535862]'
                   }`}
                 >
-                  <Eye className="size-3.5" />
-                  <span>Preview Visual</span>
+                  <Eye className="size-3.5 inline mr-1" />
+                  Pratinjau
                 </button>
               </div>
-
-              {activeTab === 'write' && (
-                <div className="flex flex-wrap items-center gap-1 text-[#344054]">
-                  <button
-                    type="button"
-                    title="Heading 2"
-                    onClick={() => insertFormatting('\n## ')}
-                    className="px-2 py-1 rounded hover:bg-[#f2f4f7] text-xs font-bold text-[#344054] cursor-pointer"
-                  >
-                    H2
-                  </button>
-                  <button
-                    type="button"
-                    title="Heading 3"
-                    onClick={() => insertFormatting('\n### ')}
-                    className="px-2 py-1 rounded hover:bg-[#f2f4f7] text-xs font-bold text-[#344054] cursor-pointer"
-                  >
-                    H3
-                  </button>
-                  <button
-                    type="button"
-                    title="Heading 4"
-                    onClick={() => insertFormatting('\n#### ')}
-                    className="px-2 py-1 rounded hover:bg-[#f2f4f7] text-xs font-bold text-[#344054] cursor-pointer"
-                  >
-                    H4
-                  </button>
-                  <div className="h-4 w-[1px] bg-[#d5d7da] mx-1" />
-                  <button
-                    type="button"
-                    title="Tebal (Bold)"
-                    onClick={() => insertFormatting('**', '**')}
-                    className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#344054] cursor-pointer"
-                  >
-                    <Bold01 className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Miring (Italic)"
-                    onClick={() => insertFormatting('*', '*')}
-                    className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#344054] cursor-pointer"
-                  >
-                    <Italic01 className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Internal / External Link"
-                    onClick={() => insertFormatting('[Teks Link](', ')')}
-                    className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#344054] cursor-pointer"
-                  >
-                    <Link01 className="size-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    title="Kutipan (Quote)"
-                    onClick={() => insertFormatting('\n> ')}
-                    className="px-2 py-1 rounded hover:bg-[#f2f4f7] text-xs font-bold text-[#344054] cursor-pointer"
-                  >
-                    “
-                  </button>
-                  <button
-                    type="button"
-                    title="Daftar Bullet"
-                    onClick={() => insertFormatting('\n- ')}
-                    className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#344054] cursor-pointer"
-                  >
-                    <List className="size-3.5" />
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Editor Area */}
             {activeTab === 'write' ? (
               <textarea
                 id="article-content-area"
-                rows={22}
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Tulis artikel di sini menggunakan Markdown atau teks terstruktur... Gunakan ## untuk Subheading H2, ### untuk H3, dan #### untuk H4."
-                className="w-full p-6 text-sm font-mono text-[#181d27] leading-relaxed focus:outline-none resize-y"
+                rows={18}
+                value={currentContent}
+                onChange={(e) => handleContentChange(e.target.value)}
+                placeholder={
+                  activeLocale === 'id'
+                    ? 'Tulis isi artikel dalam format Markdown...\nGunakan ## untuk Sub-judul (H2) dan ### untuk H3 agar otomatis membentuk Daftar Isi.'
+                    : 'Write article content in Markdown format...\nUse ## for Headings (H2) and ### for H3 to auto-generate the Table of Contents.'
+                }
+                className="w-full p-4 text-sm font-mono leading-relaxed border-0 focus:ring-0 focus:outline-hidden resize-y"
               />
             ) : (
-              <div className="p-8 prose prose-slate max-w-none min-h-[400px]">
-                <h1 className="text-2xl font-bold text-[#181d27] mb-4">{title || 'Judul Artikel'}</h1>
-                {coverImageUrl && (
-                  <div className="my-4 rounded-xl overflow-hidden border border-[#eaecf0] max-h-80 relative">
-                    <img src={coverImageUrl} alt={coverImageAlt || title} className="w-full object-cover" />
+              <div className="p-6 prose prose-slate max-w-none min-h-[380px]">
+                {currentContent.trim() ? (
+                  <div className="space-y-4">
+                    {currentContent.split('\n\n').map((paragraph, idx) => {
+                      if (paragraph.startsWith('### ')) {
+                        return (
+                          <h3 key={idx} className="text-lg font-bold text-[#181d27] mt-4 mb-2">
+                            {paragraph.replace(/^###\s+/, '')}
+                          </h3>
+                        );
+                      }
+                      if (paragraph.startsWith('## ')) {
+                        return (
+                          <h2 key={idx} className="text-xl font-bold text-[#181d27] mt-6 mb-3 pb-1 border-b border-[#eaecf0]">
+                            {paragraph.replace(/^##\s+/, '')}
+                          </h2>
+                        );
+                      }
+                      if (paragraph.startsWith('> ')) {
+                        return (
+                          <blockquote key={idx} className="border-l-4 border-[#465984] pl-4 py-1 italic text-[#535862] bg-[#f8f9fa] rounded-r">
+                            {paragraph.replace(/^>\s+/, '')}
+                          </blockquote>
+                        );
+                      }
+                      return (
+                        <p key={idx} className="text-sm text-[#414651] leading-relaxed">
+                          {paragraph}
+                        </p>
+                      );
+                    })}
                   </div>
+                ) : (
+                  <p className="text-xs text-[#717680] italic">Belum ada konten untuk ditampilkan.</p>
                 )}
-                <div className="whitespace-pre-wrap text-sm text-[#344054] leading-relaxed">
-                  {content || 'Belum ada konten ditulis.'}
-                </div>
               </div>
             )}
 
-            <div className="p-3 bg-[#fafafa] border-t border-[#eaecf0] flex items-center justify-between text-xs text-[#717680]">
-              <div className="flex items-center gap-4">
-                <span>{content.split(/\s+/).filter(Boolean).length} kata</span>
-                <span>{detectedToc.length} heading terdeteksi</span>
+            {/* Editor Footer Stats */}
+            <div className="flex items-center justify-between px-4 py-2 bg-[#f8f9fa] border-t border-[#eaecf0] text-xs text-[#717680]">
+              <div className="flex items-center gap-3">
+                <span>{wordCount} kata</span>
+                <span>•</span>
+                <span>~{readMinutes} menit baca</span>
+                <span>•</span>
+                <span>Bahasa: <strong>{activeLocale.toUpperCase()}</strong></span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="size-3.5 text-[#717680]" />
-                <span>Est. Baca: {Math.max(1, Math.ceil(content.split(/\s+/).filter(Boolean).length / 200))} menit</span>
+              <span className="text-[11px]">Format: Markdown H1-H4 & Callout didukung</span>
+            </div>
+          </div>
+
+          {/* SEO Metadata Box */}
+          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-[#eaecf0] pb-3">
+              <h3 className="text-sm font-semibold text-[#181d27] flex items-center gap-2">
+                <Globe01 className="size-4 text-[#465984]" />
+                Pengaturan SEO & Cuplikan Google ({activeLocale.toUpperCase()})
+              </h3>
+              <span className="text-xs text-[#717680]">Optimasi Meta Search</span>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-[#535862] mb-1">
+                  Meta Title ({activeLocale.toUpperCase()})
+                </label>
+                <input
+                  type="text"
+                  value={currentMetaTitle}
+                  onChange={(e) => handleMetaTitleChange(e.target.value)}
+                  placeholder={currentTitle || 'Judul artikel untuk Google Search...'}
+                  className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[#535862] mb-1">
+                  Meta Description ({activeLocale.toUpperCase()})
+                </label>
+                <textarea
+                  rows={3}
+                  value={currentMetaDesc}
+                  onChange={(e) => handleMetaDescChange(e.target.value)}
+                  placeholder={currentExcerpt || 'Deskripsi singkat 150-160 karakter untuk hasil pencarian...'}
+                  className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden"
+                />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right Column (4 cols): SEO & Publishing Sidebar */}
+        {/* Right Column: Taxonomy, Media, E-E-A-T, & Live SERP (4 Cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* Status & Schedule Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#344054] uppercase tracking-wider">
-                Status & Publikasi
-              </span>
-              <span
-                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-                  status === 'PUBLISHED'
-                    ? 'bg-[#ecfdf3] text-[#079455] border border-[#abefc6]'
-                    : status === 'SCHEDULED'
-                    ? 'bg-[#fffaeb] text-[#dc6803] border border-[#fedf89]'
-                    : 'bg-[#f2f5f9] text-[#465984] border border-[#c6d2e6]'
-                }`}
-              >
-                {status}
-              </span>
-            </div>
+          {/* Live Google Search Preview (Interactive) */}
+          <GoogleSerpPreview
+            title={currentTitle}
+            metaTitle={currentMetaTitle}
+            metaDescription={currentMetaDesc}
+            slug={activeLocale === 'en' ? `en/blog/${slug}` : slug}
+          />
 
-            <div className="space-y-2 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg hover:bg-[#f9fafb] border border-[#f2f4f7]">
-                <input
-                  type="radio"
-                  name="status_choice"
-                  checked={status === 'DRAFT'}
-                  onChange={() => setStatus('DRAFT')}
-                  className="text-[#465984] focus:ring-[#465984]"
-                />
-                <span className="text-[#344054] font-medium">Simpan sebagai Draft</span>
+          {/* Live Table of Contents Preview */}
+          <TableOfContentsPreview content={currentContent} />
+
+          {/* URL & Publishing Settings Box */}
+          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-4">
+            <h3 className="text-sm font-semibold text-[#181d27] border-b border-[#eaecf0] pb-3">
+              Parameter Publikasi & URL
+            </h3>
+
+            {/* Slug URL */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">
+                Slug URL (Kebab-case Lowercase) <span className="text-red-500">*</span>
               </label>
-
-              <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg hover:bg-[#f9fafb] border border-[#f2f4f7]">
-                <input
-                  type="radio"
-                  name="status_choice"
-                  checked={status === 'PUBLISHED'}
-                  onChange={() => setStatus('PUBLISHED')}
-                  className="text-[#465984] focus:ring-[#465984]"
-                />
-                <span className="text-[#344054] font-medium">Publish Sekarang</span>
-              </label>
-
-              <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-lg hover:bg-[#f9fafb] border border-[#f2f4f7]">
-                <input
-                  type="radio"
-                  name="status_choice"
-                  checked={status === 'SCHEDULED'}
-                  onChange={() => setStatus('SCHEDULED')}
-                  className="text-[#465984] focus:ring-[#465984]"
-                />
-                <span className="text-[#344054] font-medium">Jadwalkan Publish</span>
-              </label>
-
-              {status === 'SCHEDULED' && (
-                <div className="pt-2">
-                  <label className="block text-[11px] text-[#535862] mb-1 flex items-center gap-1 font-medium">
-                    <Calendar className="size-3.5 text-[#465984]" />
-                    <span>Waktu Tayang Otomatis:</span>
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={scheduledAt}
-                    onChange={(e) => setScheduledAt(e.target.value)}
-                    className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="pt-2 border-t border-[#f2f4f7]">
-              <label className="flex items-center gap-2 text-xs cursor-pointer text-[#344054] font-medium">
-                <input
-                  type="checkbox"
-                  checked={featured}
-                  onChange={(e) => setFeatured(e.target.checked)}
-                  className="rounded text-[#465984] focus:ring-[#465984]"
-                />
-                <span>Jadikan Artikel Unggulan (Featured)</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Featured Image & WebP Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#eaecf0] shadow-xs space-y-3">
-            <span className="text-xs font-semibold text-[#344054] uppercase tracking-wider block">
-              Featured Image & Alt Text
-            </span>
-
-            {coverImageUrl ? (
-              <div className="space-y-2">
-                <div className="rounded-xl overflow-hidden border border-[#eaecf0] relative aspect-video bg-[#f9fafb]">
-                  <img src={coverImageUrl} alt={coverImageAlt || title} className="w-full h-full object-cover" />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCoverImageUrl('')}
-                  className="text-[11px] text-[#d92d20] hover:underline cursor-pointer"
-                >
-                  Hapus / Ganti Gambar
-                </button>
-              </div>
-            ) : (
-              <label className="border-2 border-dashed border-[#eaecf0] hover:border-[#465984] rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition bg-[#fcfcfd]">
-                <Upload01 className="size-6 text-[#717680] mb-2" />
-                <span className="text-xs font-semibold text-[#344054]">
-                  {uploadingImage ? 'Mengunggah ke R2...' : 'Upload Featured Image'}
+              <div className="flex items-center">
+                <span className="text-xs text-[#717680] bg-[#f8f9fa] border border-r-0 border-[#d5d7da] px-2.5 py-2 rounded-l-lg select-none">
+                  /blog/
                 </span>
-                <span className="text-[11px] text-[#717680] mt-1">Otomatis konversi ke WebP di Cloudflare R2</span>
                 <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={uploadingImage}
-                  className="hidden"
+                  type="text"
+                  value={slug}
+                  onChange={(e) =>
+                    setSlug(
+                      e.target.value
+                        .toLowerCase()
+                        .replace(/\s+/g, '-')
+                        .replace(/[^a-z0-9-]/g, '')
+                    )
+                  }
+                  placeholder="panduan-seo-ai-2026"
+                  className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-r-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden"
                 />
-              </label>
+              </div>
+              <p className="text-[11px] text-[#717680]">
+                Wajib unik. Jangan gunakan spasi atau karakter khusus.
+              </p>
+            </div>
+
+            {/* Status Select */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">Status Publikasi</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as any)}
+                className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden bg-white"
+              >
+                <option value="DRAFT">DRAFT (Disembunyikan dari Sitemap)</option>
+                <option value="PUBLISHED">PUBLISHED (Aktif di Sitemap & Landing)</option>
+                <option value="SCHEDULED">SCHEDULED (Jadwalkan Rilis Otomatis)</option>
+                <option value="ARCHIVED">ARCHIVED (Diarsipkan / Keluar Sitemap)</option>
+              </select>
+            </div>
+
+            {/* Schedule Input if SCHEDULED */}
+            {status === 'SCHEDULED' && (
+              <div className="space-y-1.5 bg-blue-50/50 p-3 rounded-lg border border-blue-200">
+                <label className="block text-xs font-medium text-blue-900 flex items-center gap-1.5">
+                  <Calendar className="size-3.5" />
+                  Jadwal Waktu Rilis Otomatis
+                </label>
+                <input
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                  className="w-full px-3 py-1.5 text-xs border border-blue-300 rounded shadow-xs focus:ring-2 focus:ring-[#465984] bg-white"
+                />
+              </div>
             )}
 
-            <div>
-              <label className="block text-[11px] font-semibold text-[#535862] mb-1">
-                Image Alt Text (SEO Crucial)
-              </label>
+            {/* Featured Checkbox */}
+            <div className="pt-2 flex items-center gap-2">
               <input
-                type="text"
-                value={coverImageAlt}
-                onChange={(e) => setCoverImageAlt(e.target.value)}
-                placeholder="Deskripsi gambar untuk Google Image Search"
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                type="checkbox"
+                id="featured-article-toggle"
+                checked={featured}
+                onChange={(e) => setFeatured(e.target.checked)}
+                className="size-4 text-[#465984] rounded border-[#d5d7da] focus:ring-[#465984]"
               />
+              <label htmlFor="featured-article-toggle" className="text-xs font-medium text-[#181d27]">
+                Jadikan Artikel Unggulan (Featured Post)
+              </label>
             </div>
           </div>
 
-          {/* SEO Metadata Form */}
-          <div className="bg-white p-5 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4">
-            <span className="text-xs font-semibold text-[#344054] uppercase tracking-wider block">
-              Pengaturan Meta SEO
-            </span>
+          {/* E-E-A-T Taxonomy & Authors */}
+          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-4">
+            <h3 className="text-sm font-semibold text-[#181d27] border-b border-[#eaecf0] pb-3">
+              Kategori & E-E-A-T Persona
+            </h3>
 
-            {/* Meta Title */}
-            <div>
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <label className="font-semibold text-[#535862]">Meta Title</label>
-                <span
-                  className={
-                    metaTitle.length > 60
-                      ? 'text-[#d92d20] font-semibold'
-                      : 'text-[#717680]'
-                  }
-                >
-                  {metaTitle.length}/60
-                </span>
-              </div>
-              <input
-                type="text"
-                value={metaTitle}
-                onChange={(e) => setMetaTitle(e.target.value)}
-                placeholder={title || 'Judul meta untuk Google SERP'}
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-              />
-            </div>
-
-            {/* Meta Description */}
-            <div>
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <label className="font-semibold text-[#535862]">Meta Description</label>
-                <span
-                  className={
-                    metaDescription.length > 160
-                      ? 'text-[#d92d20] font-semibold'
-                      : 'text-[#717680]'
-                  }
-                >
-                  {metaDescription.length}/160
-                </span>
-              </div>
-              <textarea
-                rows={3}
-                value={metaDescription}
-                onChange={(e) => setMetaDescription(e.target.value)}
-                placeholder={excerpt || 'Deskripsi meta yang muncul di hasil pencarian'}
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-              />
-            </div>
-
-            {/* Canonical URL */}
-            <div>
-              <label className="block text-[11px] font-semibold text-[#535862] mb-1">
-                Canonical URL (Opsional)
-              </label>
-              <input
-                type="text"
-                value={canonicalUrl}
-                onChange={(e) => setCanonicalUrl(e.target.value)}
-                placeholder="https://optimark.ai/blog/slug-asli"
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-              />
-            </div>
-
-            {/* Tags */}
-            <div>
-              <label className="block text-[11px] font-semibold text-[#535862] mb-1">
-                Tags (Pisahkan dengan koma)
-              </label>
-              <input
-                type="text"
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="SEO, Content Marketing, AI"
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-              />
-            </div>
-          </div>
-
-          {/* E-E-A-T & Taxonomy Card */}
-          <div className="bg-white p-5 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4">
-            <span className="text-xs font-semibold text-[#344054] uppercase tracking-wider block">
-              E-E-A-T & Taksonomi
-            </span>
-
-            {/* Category */}
-            <div>
-              <label className="block text-[11px] font-semibold text-[#535862] mb-1">Kategori Topik</label>
+            {/* Category Select */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">Kategori Blog</label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white text-[#181d27]"
+                className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden bg-white"
               >
                 <option value="">Pilih Kategori...</option>
                 {categories.map((c) => (
@@ -682,15 +766,15 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
               </select>
             </div>
 
-            {/* Author */}
-            <div>
-              <label className="block text-[11px] font-semibold text-[#535862] mb-1">Penulis (Author)</label>
+            {/* Author Select */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">Penulis (Author)</label>
               <select
                 value={authorId}
                 onChange={(e) => setAuthorId(e.target.value)}
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white text-[#181d27]"
+                className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden bg-white"
               >
-                <option value="">Pilih Penulis...</option>
+                <option value="">Pilih Penulis E-E-A-T...</option>
                 {people
                   .filter((p) => p.type === 'AUTHOR' || p.type === 'BOTH')
                   .map((p) => (
@@ -701,15 +785,17 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
               </select>
             </div>
 
-            {/* Reviewer */}
-            <div>
-              <label className="block text-[11px] font-semibold text-[#535862] mb-1">Reviewer (E-E-A-T Expert)</label>
+            {/* Reviewer Select */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">
+                Editorial Reviewer (E-E-A-T)
+              </label>
               <select
                 value={reviewerId}
                 onChange={(e) => setReviewerId(e.target.value)}
-                className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white text-[#181d27]"
+                className="w-full px-3 py-2 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden bg-white"
               >
-                <option value="">Tidak ada reviewer khusus</option>
+                <option value="">Pilih Reviewer (Opsional)...</option>
                 {people
                   .filter((p) => p.type === 'REVIEWER' || p.type === 'BOTH')
                   .map((p) => (
@@ -721,16 +807,93 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
             </div>
           </div>
 
-          {/* Live Google SERP Snippet Preview */}
-          <GoogleSerpPreview
-            title={title}
-            metaTitle={metaTitle}
-            metaDescription={metaDescription}
-            slug={slug}
-          />
+          {/* Cover Media & Cloudflare R2 Upload */}
+          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-4">
+            <h3 className="text-sm font-semibold text-[#181d27] border-b border-[#eaecf0] pb-3">
+              Gambar Sampul (Cover Image)
+            </h3>
 
-          {/* Table of Contents Preview */}
-          <TableOfContentsPreview items={detectedToc} />
+            {coverImageUrl ? (
+              <div className="space-y-3">
+                <div className="relative aspect-video rounded-lg overflow-hidden border border-[#eaecf0] bg-slate-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={coverImageUrl}
+                    alt={coverImageAlt || 'Cover'}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCoverImageUrl('')}
+                  className="text-xs text-red-600 hover:text-red-700 font-medium"
+                >
+                  Hapus Gambar
+                </button>
+              </div>
+            ) : (
+              <div className="border-2 border-dashed border-[#d5d7da] hover:border-[#465984] rounded-lg p-6 text-center space-y-2 transition-colors">
+                <Upload01 className="size-8 mx-auto text-[#717680]" />
+                <div className="text-xs text-[#535862]">
+                  <label className="text-[#465984] font-semibold hover:underline cursor-pointer">
+                    <span>Pilih file gambar</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="sr-only"
+                    />
+                  </label>{' '}
+                  atau seret ke sini
+                </div>
+                <p className="text-[11px] text-[#717680]">PNG, JPG, WebP hingga 10MB</p>
+                {uploadingImage && (
+                  <p className="text-xs text-[#465984] font-medium animate-pulse">Mengunggah ke Cloudflare R2...</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-1.5 pt-1">
+              <label className="block text-xs font-medium text-[#535862]">Cover Image Alt Text</label>
+              <input
+                type="text"
+                value={coverImageAlt}
+                onChange={(e) => setCoverImageAlt(e.target.value)}
+                placeholder="Deskripsi gambar untuk aksesibilitas dan SEO gambar Google..."
+                className="w-full px-3 py-2 text-xs border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984]"
+              />
+            </div>
+          </div>
+
+          {/* Tags & Canonical Box */}
+          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-4">
+            <h3 className="text-sm font-semibold text-[#181d27] border-b border-[#eaecf0] pb-3">
+              Tags & Canonical URL
+            </h3>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">Tags (Pisahkan koma)</label>
+              <input
+                type="text"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
+                placeholder="SEO, Keyword Research, UMKM, Googlebot"
+                className="w-full px-3 py-2 text-xs border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[#535862]">Canonical URL (Opsional)</label>
+              <input
+                type="url"
+                value={canonicalUrl}
+                onChange={(e) => setCanonicalUrl(e.target.value)}
+                placeholder="https://optimark.ai/blog/..."
+                className="w-full px-3 py-2 text-xs border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984]"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
