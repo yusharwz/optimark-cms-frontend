@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@untitledui/icons':
+        specifier: ^0.0.23
+        version: 0.0.23(react@19.3.0)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -30,6 +33,9 @@ importers:
         specifier: ^3.7.0
         version: 3.7.0
     devDependencies:
+      '@tailwindcss/postcss':
+        specifier: ^4.3.3
+        version: 4.3.3
       '@tailwindcss/turbopack':
         specifier: ^4
         version: 4.3.3
@@ -558,6 +564,9 @@ packages:
     resolution: {integrity: sha512-krXjAikiaFSPaK/FkAQT5UTx3VormQaiZ5hBFlJZ9UFQGB/rwg1MZIhHAG9smMQRTdyJxP6Qt5MwMtdyU5FWrA==}
     engines: {node: '>= 20'}
 
+  '@tailwindcss/postcss@4.3.3':
+    resolution: {integrity: sha512-JTSZZGQi1AyKirbLN3azmjVzef92tcX7h+iSqPdaeStyFpGpDlKvvpxeOE8njhbUanbRwr3z8DyzhICWnMtQeg==}
+
   '@tailwindcss/turbopack@4.3.3':
     resolution: {integrity: sha512-FgL4wRgItNdXcDjcgYUSd59gNsWqNVK4GotjZimZMmt7OOIkRNqH2QEUcRXLdBDXvwTsi5rkYxDxzfrFUkmObQ==}
 
@@ -762,6 +771,11 @@ packages:
     resolution: {integrity: sha512-nAB74NfSNKknqQ1RrYj6uz8FcXEomu/MATJZxh/x+BArzN2U3JbOYC0APYzUIGhVY3m5hRxA8VPNdPBoG8txlA==}
     cpu: [x64]
     os: [win32]
+
+  '@untitledui/icons@0.0.23':
+    resolution: {integrity: sha512-WoBtPCXaxweF0RXS9IuqgEeJkBmT7A9SszPHB+vQJOxeAl0hDTFXHlWXsooYniXQ0JmP4+7RADdhWb39GWFT8g==}
+    peerDependencies:
+      react: '>= 16'
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2474,6 +2488,14 @@ snapshots:
       '@tailwindcss/oxide-win32-arm64-msvc': 4.3.3
       '@tailwindcss/oxide-win32-x64-msvc': 4.3.3
 
+  '@tailwindcss/postcss@4.3.3':
+    dependencies:
+      '@alloc/quick-lru': 5.3.0
+      '@tailwindcss/node': 4.3.3
+      '@tailwindcss/oxide': 4.3.3
+      postcss: 8.5.23
+      tailwindcss: 4.3.3
+
   '@tailwindcss/turbopack@4.3.3':
     dependencies:
       '@alloc/quick-lru': 5.3.0
@@ -2664,6 +2686,10 @@ snapshots:
 
   '@unrs/resolver-binding-win32-x64-msvc@1.12.2':
     optional: true
+
+  '@untitledui/icons@0.0.23(react@19.3.0)':
+    dependencies:
+      react: 19.3.0
 
   acorn-jsx@5.3.2(acorn@8.19.0):
     dependencies:

@@ -1,6 +1,7 @@
 'use client';
 
-import { Globe } from 'lucide-react';
+import Image from 'next/image';
+import { Globe01 } from '@untitledui/icons';
 
 interface GoogleSerpPreviewProps {
   title: string;
@@ -22,21 +23,25 @@ export function GoogleSerpPreview({
   const displayUrl = `https://optimark.ai > blog > ${slug || 'judul-artikel-baru'}`;
 
   return (
-    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+    <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-          <Globe className="w-3.5 h-3.5 text-[#465984]" />
+        <span className="text-xs font-semibold text-[#535862] uppercase tracking-wider flex items-center gap-1.5">
+          <Globe01 className="size-3.5 text-[#465984]" />
           Preview Google Search SERP
         </span>
-        <span className="text-[11px] text-slate-400">Desktop Snippet</span>
+        <span className="text-[11px] text-[#717680]">Desktop Snippet</span>
       </div>
 
       <div className="pt-1 font-sans">
-        {/* Breadcrumb URL */}
-        <div className="text-[12px] text-slate-700 truncate leading-snug flex items-center gap-1">
-          <span className="w-4 h-4 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[10px] text-slate-600 font-bold">
-            O
-          </span>
+        {/* Breadcrumb URL with Real Optimark Logo */}
+        <div className="text-[12px] text-[#424751] truncate leading-snug flex items-center gap-1.5">
+          <Image
+            src="/assets/optimark-logo.svg"
+            alt="Optimark"
+            width={16}
+            height={16}
+            className="shrink-0"
+          />
           <span className="truncate">{displayUrl}</span>
         </div>
 

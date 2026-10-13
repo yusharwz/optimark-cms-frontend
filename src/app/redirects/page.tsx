@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { RedirectItem } from '@/lib/types';
-import { Plus, Trash2, Edit2, Shuffle, Check, X, ArrowRight, Info } from 'lucide-react';
+import {
+  Plus,
+  Trash01,
+  Edit01,
+  SwitchHorizontal01,
+  Check,
+  XClose,
+  ArrowRight,
+  InfoCircle,
+} from '@untitledui/icons';
 import { formatDate } from '@/lib/utils';
 
 export default function RedirectsPage() {
@@ -104,7 +113,7 @@ export default function RedirectsPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
         title="301 Redirect Management"
         description="Kelola pengalihan URL permanen (301) agar link equity, backlink, dan organic ranking tidak hilang saat URL artikel berubah."
@@ -115,9 +124,9 @@ export default function RedirectsPage() {
               resetForm();
               setIsAdding(!isAdding);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#465984] hover:bg-[#38486d] text-white text-xs font-medium shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#465984] hover:bg-[#3f5077] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="size-3.5 text-white" />
             <span>Tambah Redirect</span>
           </button>
         }
@@ -125,10 +134,10 @@ export default function RedirectsPage() {
 
       <div className="p-8 space-y-6 max-w-5xl">
         {/* SEO Tip Card */}
-        <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-900 text-xs flex items-start gap-3">
-          <Info className="w-4 h-4 text-[#465984] shrink-0 mt-0.5" />
+        <div className="p-4 rounded-xl border border-[#c6d2e6] bg-[#f2f5f9] text-[#1e273b] text-xs flex items-start gap-3 shadow-xs">
+          <InfoCircle className="size-4 text-[#465984] shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <span className="font-semibold">Otomatisasi 301:</span> Ketika Anda mengubah slug artikel di CMS, sistem backend otomatis membuat aturan 301 dari URL lama ke URL baru. Halaman ini digunakan untuk memantau atau menambahkan redirect kustom tambahan (misal dari URL kampanye lama).
+            <span className="font-semibold text-[#181d27]">Otomatisasi 301:</span> Ketika Anda mengubah slug artikel di CMS, sistem backend otomatis membuat aturan 301 dari URL lama ke URL baru. Halaman ini digunakan untuk memantau atau menambahkan redirect kustom tambahan (misal dari URL kampanye lama).
           </div>
         </div>
 
@@ -142,10 +151,10 @@ export default function RedirectsPage() {
                 handleCreate(e);
               }
             }}
-            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4"
+            className="bg-white p-6 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-[#181d27] uppercase tracking-wider">
                 {editingId ? 'Edit Aturan Redirect' : 'Tambah Redirect Baru'}
               </span>
               <button
@@ -154,43 +163,43 @@ export default function RedirectsPage() {
                   resetForm();
                   setIsAdding(false);
                 }}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-[#717680] hover:text-[#181d27] cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <XClose className="size-4" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Source Path (URL Asal)</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Source Path (URL Asal)</label>
                 <input
                   type="text"
                   value={sourcePath}
                   onChange={(e) => setSourcePath(e.target.value)}
                   placeholder="/blog/slug-lama-2025"
                   required
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Target Path (URL Tujuan)</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Target Path (URL Tujuan)</label>
                 <input
                   type="text"
                   value={targetPath}
                   onChange={(e) => setTargetPath(e.target.value)}
                   placeholder="/blog/slug-baru-2026"
                   required
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">HTTP Status Code</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">HTTP Status Code</label>
                 <select
                   value={statusCode}
                   onChange={(e) => setStatusCode(Number(e.target.value))}
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white text-[#181d27]"
                 >
                   <option value={301}>301 Moved Permanently (SEO Standard)</option>
                   <option value={302}>302 Found (Temporary Redirect)</option>
@@ -198,18 +207,18 @@ export default function RedirectsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Catatan / Alasan</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Catatan / Alasan</label>
                 <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ganti judul & pembaruan tahun 2026..."
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="flex items-center gap-2 text-xs cursor-pointer text-slate-700">
+                <label className="flex items-center gap-2 text-xs cursor-pointer text-[#344054] font-medium">
                   <input
                     type="checkbox"
                     checked={active}
@@ -228,13 +237,13 @@ export default function RedirectsPage() {
                   resetForm();
                   setIsAdding(false);
                 }}
-                className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                className="px-3.5 py-2 text-xs font-semibold text-[#344054] hover:bg-[#f9fafb] border border-[#d5d7da] rounded-lg cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 text-xs bg-[#465984] hover:bg-[#38486d] text-white font-medium rounded-lg"
+                className="px-4 py-2 text-xs bg-[#465984] hover:bg-[#3f5077] text-white font-semibold rounded-lg shadow-xs cursor-pointer"
               >
                 {editingId ? 'Simpan Perubahan' : 'Buat Redirect'}
               </button>
@@ -243,10 +252,10 @@ export default function RedirectsPage() {
         )}
 
         {/* Redirects Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+              <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Pengalihan (Source → Target)</th>
                 <th className="py-3 px-4">Tipe Status</th>
                 <th className="py-3 px-4">Status</th>
@@ -254,52 +263,52 @@ export default function RedirectsPage() {
                 <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#f2f4f7]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400">
+                  <td colSpan={5} className="py-6 text-center text-[#717680]">
                     Memuat redirects...
                   </td>
                 </tr>
               ) : redirects.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
+                  <td colSpan={5} className="py-8 text-center text-[#717680]">
                     Belum ada aturan redirect aktif.
                   </td>
                 </tr>
               ) : (
                 redirects.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-50/70">
+                  <tr key={r.id} className="hover:bg-[#f9fafb] transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2 font-mono text-[11px]">
-                        <span className="text-slate-800 font-semibold">{r.sourcePath}</span>
-                        <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="text-[#465984]">{r.targetPath}</span>
+                        <span className="text-[#181d27] font-semibold">{r.sourcePath}</span>
+                        <ArrowRight className="size-3.5 text-[#717680]" />
+                        <span className="text-[#465984] font-semibold">{r.targetPath}</span>
                       </div>
                       {r.description && (
-                        <div className="text-[10px] text-slate-400 mt-0.5">{r.description}</div>
+                        <div className="text-[10px] text-[#717680] mt-0.5">{r.description}</div>
                       )}
                     </td>
 
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-blue-50 text-blue-700 border border-blue-100">
+                      <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-[#f2f5f9] text-[#465984] border border-[#c6d2e6]">
                         {r.statusCode}
                       </span>
                     </td>
 
                     <td className="py-3 px-4">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                           r.active
-                            ? 'bg-emerald-50 text-emerald-700'
-                            : 'bg-slate-100 text-slate-500'
+                            ? 'bg-[#ecfdf3] text-[#079455]'
+                            : 'bg-[#f2f4f7] text-[#535862]'
                         }`}
                       >
                         {r.active ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-slate-500">
+                    <td className="py-3 px-4 text-[#535862]">
                       {formatDate(r.createdAt)}
                     </td>
 
@@ -308,16 +317,16 @@ export default function RedirectsPage() {
                         <button
                           type="button"
                           onClick={() => startEdit(r)}
-                          className="p-1.5 text-slate-500 hover:bg-slate-100 rounded"
+                          className="p-1.5 text-[#535862] hover:bg-[#f2f4f7] rounded cursor-pointer"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit01 className="size-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(r.id)}
-                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"
+                          className="p-1.5 text-[#d92d20] hover:bg-[#fef3f2] rounded cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash01 className="size-3.5" />
                         </button>
                       </div>
                     </td>

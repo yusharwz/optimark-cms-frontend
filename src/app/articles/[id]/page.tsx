@@ -26,7 +26,7 @@ export default function EditArticlePage({ params }: EditArticlePageProps) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[400px] text-slate-400 text-xs">
+      <div className="flex-1 flex items-center justify-center min-h-[400px] text-[#717680] text-xs">
         Memuat detail artikel...
       </div>
     );
@@ -34,14 +34,14 @@ export default function EditArticlePage({ params }: EditArticlePageProps) {
 
   if (error || !article) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-[400px] text-rose-500 text-xs">
+      <div className="flex-1 flex items-center justify-center min-h-[400px] text-[#d92d20] text-xs">
         {error || 'Artikel tidak ditemukan'}
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
         title={`Edit: ${article.title}`}
         description={`Terakhir diperbarui: ${new Date(article.updatedAt).toLocaleString('id-ID')}`}

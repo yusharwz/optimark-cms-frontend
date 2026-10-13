@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "../styles/theme.css";
+@import "../styles/typography.css";
 
 :root {
   --background: #f8fafc;

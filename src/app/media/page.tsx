@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { MediaItem } from '@/lib/types';
-import { Upload, Copy, Check, Edit2, Image as ImageIcon } from 'lucide-react';
+import { Upload01, Copy01, Check, Edit01, Image03 } from '@untitledui/icons';
 import { formatDate } from '@/lib/utils';
 
 export default function MediaPage() {
@@ -65,13 +65,13 @@ export default function MediaPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
         title="Media & Gambar R2"
         description="Kelola aset gambar, optimasi WebP, dan optimalkan Image Alt Text untuk Google Image SEO."
         actions={
-          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#465984] hover:bg-[#38486d] text-white text-xs font-medium shadow-sm transition-colors">
-            <Upload className="w-3.5 h-3.5" />
+          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#465984] hover:bg-[#3f5077] text-white text-xs font-semibold shadow-xs transition-colors">
+            <Upload01 className="size-3.5 text-white" />
             <span>{uploading ? 'Mengunggah...' : 'Upload Gambar Baru'}</span>
             <input
               type="file"
@@ -86,23 +86,23 @@ export default function MediaPage() {
 
       <div className="p-8 space-y-6 max-w-7xl">
         {loading ? (
-          <div className="py-12 text-center text-slate-400 text-xs">
+          <div className="py-12 text-center text-[#717680] text-xs">
             Memuat aset media dari Cloudflare R2...
           </div>
         ) : media.length === 0 ? (
-          <div className="py-16 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
-            <ImageIcon className="w-10 h-10 mx-auto mb-3 text-slate-300" />
-            <p className="font-semibold text-slate-700">Belum ada aset gambar tersimpan</p>
-            <p className="text-xs text-slate-400 mt-1">Upload gambar untuk digunakan dalam artikel SEO Anda.</p>
+          <div className="py-16 text-center text-[#717680] bg-white rounded-2xl border border-[#eaecf0] shadow-xs">
+            <Image03 className="size-10 mx-auto mb-3 text-[#d5d7da]" />
+            <p className="font-semibold text-[#181d27]">Belum ada aset gambar tersimpan</p>
+            <p className="text-xs text-[#717680] mt-1">Upload gambar untuk digunakan dalam artikel SEO Anda.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {media.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col"
+                className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden flex flex-col"
               >
-                <div className="aspect-video bg-slate-100 relative group overflow-hidden border-b border-slate-100">
+                <div className="aspect-video bg-[#f9fafb] relative group overflow-hidden border-b border-[#f2f4f7]">
                   <img
                     src={item.url}
                     alt={item.altText || item.filename}
@@ -111,30 +111,30 @@ export default function MediaPage() {
                   <button
                     type="button"
                     onClick={() => handleCopy(item.url, item.id)}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition"
+                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition cursor-pointer"
                     title="Salin URL Gambar"
                   >
                     {copiedId === item.id ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <Check className="size-3.5 text-[#12b76a]" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy01 className="size-3.5 text-white" />
                     )}
                   </button>
                 </div>
 
                 <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2 text-xs">
                   <div>
-                    <div className="font-medium text-slate-900 truncate" title={item.filename}>
+                    <div className="font-semibold text-[#181d27] truncate" title={item.filename}>
                       {item.filename}
                     </div>
-                    <div className="text-[10px] text-slate-400 mt-0.5 flex items-center justify-between">
+                    <div className="text-[10px] text-[#717680] mt-0.5 flex items-center justify-between">
                       <span>{(item.size / 1024).toFixed(1)} KB</span>
-                      <span>{item.mimeType}</span>
+                      <span className="font-mono">{item.mimeType}</span>
                     </div>
                   </div>
 
                   {/* Alt Text Box */}
-                  <div className="pt-1 border-t border-slate-100">
+                  <div className="pt-2 border-t border-[#f2f4f7]">
                     {editingId === item.id ? (
                       <div className="space-y-1.5">
                         <input
@@ -142,20 +142,20 @@ export default function MediaPage() {
                           value={altInput}
                           onChange={(e) => setAltInput(e.target.value)}
                           placeholder="Alt text gambar..."
-                          className="w-full p-1 border rounded text-[11px] text-slate-800"
+                          className="w-full p-1 border border-[#d5d7da] rounded text-[11px] text-[#181d27] focus:outline-none focus:ring-1 focus:ring-[#465984]"
                         />
                         <div className="flex justify-end gap-1">
                           <button
                             type="button"
                             onClick={() => setEditingId(null)}
-                            className="px-2 py-0.5 text-[10px] text-slate-500 hover:bg-slate-100 rounded"
+                            className="px-2 py-0.5 text-[10px] text-[#535862] hover:bg-[#f2f4f7] rounded cursor-pointer"
                           >
                             Batal
                           </button>
                           <button
                             type="button"
                             onClick={() => saveAlt(item.id)}
-                            className="px-2 py-0.5 text-[10px] bg-[#465984] text-white rounded font-medium"
+                            className="px-2 py-0.5 text-[10px] bg-[#465984] hover:bg-[#3f5077] text-white rounded font-semibold cursor-pointer"
                           >
                             Simpan Alt
                           </button>
@@ -164,11 +164,11 @@ export default function MediaPage() {
                     ) : (
                       <div className="flex items-center justify-between text-[11px]">
                         <span
-                          className="text-slate-600 truncate max-w-[170px]"
+                          className="text-[#535862] truncate max-w-[170px]"
                           title={item.altText || 'Alt text kosong'}
                         >
-                          <span className="font-medium text-slate-400">Alt: </span>
-                          {item.altText || <i className="text-amber-500">Belum diisi</i>}
+                          <span className="font-semibold text-[#717680]">Alt: </span>
+                          {item.altText || <i className="text-[#dc6803]">Belum diisi</i>}
                         </span>
                         <button
                           type="button"
@@ -176,9 +176,9 @@ export default function MediaPage() {
                             setEditingId(item.id);
                             setAltInput(item.altText || '');
                           }}
-                          className="text-slate-400 hover:text-slate-700 p-1"
+                          className="text-[#717680] hover:text-[#181d27] p-1 cursor-pointer"
                         >
-                          <Edit2 className="w-3 h-3" />
+                          <Edit01 className="size-3" />
                         </button>
                       </div>
                     )}

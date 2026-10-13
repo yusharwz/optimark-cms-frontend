@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { Person, PersonType } from '@/lib/types';
-import { Plus, Trash2, Edit2, Users, Check, X, ExternalLink, Upload } from 'lucide-react';
+import {
+  Plus,
+  Trash01,
+  Edit01,
+  Users01,
+  Check,
+  XClose,
+  ArrowUpRight,
+  Upload01,
+} from '@untitledui/icons';
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
@@ -129,7 +138,7 @@ export default function PeoplePage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
         title="Author & Reviewer E-E-A-T"
         description="Kelola profil penulis dan reviewer ahli untuk memenuhi standar Google E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness)."
@@ -140,9 +149,9 @@ export default function PeoplePage() {
               resetForm();
               setIsAdding(!isAdding);
             }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#465984] hover:bg-[#38486d] text-white text-xs font-medium shadow-sm transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#465984] hover:bg-[#3f5077] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="size-3.5 text-white" />
             <span>Tambah Profil</span>
           </button>
         }
@@ -159,10 +168,10 @@ export default function PeoplePage() {
                 handleCreate(e);
               }
             }}
-            className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4"
+            className="bg-white p-6 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-800 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-[#181d27] uppercase tracking-wider">
                 {editingId ? 'Edit Profil E-E-A-T' : 'Tambah Penulis / Reviewer Baru'}
               </span>
               <button
@@ -171,15 +180,15 @@ export default function PeoplePage() {
                   resetForm();
                   setIsAdding(false);
                 }}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-[#717680] hover:text-[#181d27] cursor-pointer"
               >
-                <X className="w-4 h-4" />
+                <XClose className="size-4" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Nama Lengkap</label>
                 <input
                   type="text"
                   value={name}
@@ -191,28 +200,28 @@ export default function PeoplePage() {
                   }}
                   placeholder="Misal: Jonathan Anderson"
                   required
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Jabatan / Kredensial</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Jabatan / Kredensial</label>
                 <input
                   type="text"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   placeholder="Misal: Head of Content & SEO Strategy"
                   required
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Peran di CMS</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Peran di CMS</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as PersonType)}
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] bg-white text-[#181d27]"
                 >
                   <option value="AUTHOR">Penulis Saja (Author)</option>
                   <option value="REVIEWER">Reviewer Saja (Reviewer)</option>
@@ -221,40 +230,44 @@ export default function PeoplePage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">LinkedIn Profile URL</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">LinkedIn Profile URL</label>
                 <input
                   type="url"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
                   placeholder="https://linkedin.com/in/username"
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">Biografi Profesional</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Biografi Profesional</label>
                 <textarea
                   rows={2}
                   value={bio}
                   onChange={(e) => setBio(e.target.value)}
                   placeholder="Pengalaman lebih dari 8 tahun di bidang SEO dan enterprise growth..."
-                  className="w-full text-xs p-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984]"
+                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                 />
               </div>
 
               {/* Avatar Uploader */}
               <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">Foto Avatar</label>
+                <label className="block text-xs font-semibold text-[#344054] mb-1">Foto Avatar</label>
                 <div className="flex items-center gap-3">
-                  {avatarUrl && (
+                  {avatarUrl ? (
                     <img
                       src={avatarUrl}
                       alt=""
-                      className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                      className="w-10 h-10 rounded-full object-cover border border-[#eaecf0]"
                     />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-[#f2f4f7] border border-[#eaecf0] flex items-center justify-center font-bold text-[#535862]">
+                      {name ? name.charAt(0) : '?'}
+                    </div>
                   )}
-                  <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-medium bg-slate-50 hover:bg-slate-100 text-slate-700">
-                    <Upload className="w-3.5 h-3.5 text-slate-400" />
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#d5d7da] rounded-lg text-xs font-semibold bg-[#f9fafb] hover:bg-[#f2f4f7] text-[#344054] transition">
+                    <Upload01 className="size-3.5 text-[#717680]" />
                     <span>{uploadingAvatar ? 'Uploading...' : 'Upload Foto ke R2'}</span>
                     <input
                       type="file"
@@ -269,7 +282,7 @@ export default function PeoplePage() {
                     value={avatarUrl}
                     onChange={(e) => setAvatarUrl(e.target.value)}
                     placeholder="Atau tempel URL gambar..."
-                    className="flex-1 text-xs p-2 border border-slate-200 rounded-lg focus:outline-none"
+                    className="flex-1 text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                   />
                 </div>
               </div>
@@ -282,13 +295,13 @@ export default function PeoplePage() {
                   resetForm();
                   setIsAdding(false);
                 }}
-                className="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg"
+                className="px-3.5 py-2 text-xs font-semibold text-[#344054] hover:bg-[#f9fafb] border border-[#d5d7da] rounded-lg cursor-pointer"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 text-xs bg-[#465984] hover:bg-[#38486d] text-white font-medium rounded-lg"
+                className="px-4 py-2 text-xs bg-[#465984] hover:bg-[#3f5077] text-white font-semibold rounded-lg shadow-xs cursor-pointer"
               >
                 {editingId ? 'Simpan Perubahan' : 'Simpan Profil'}
               </button>
@@ -297,10 +310,10 @@ export default function PeoplePage() {
         )}
 
         {/* People List Table */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+              <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Profil & Kredensial</th>
                 <th className="py-3 px-4">Tipe</th>
                 <th className="py-3 px-4">Slug Publik</th>
@@ -308,65 +321,65 @@ export default function PeoplePage() {
                 <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#f2f4f7]">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-center text-slate-400">
+                  <td colSpan={5} className="py-6 text-center text-[#717680]">
                     Memuat profil...
                   </td>
                 </tr>
               ) : people.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-slate-400">
+                  <td colSpan={5} className="py-8 text-center text-[#717680]">
                     Belum ada profil author atau reviewer.
                   </td>
                 </tr>
               ) : (
                 people.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-50/70">
+                  <tr key={p.id} className="hover:bg-[#f9fafb] transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         {p.avatarUrl ? (
                           <img
                             src={p.avatarUrl}
                             alt=""
-                            className="w-8 h-8 rounded-full object-cover border border-slate-200 shrink-0"
+                            className="w-8 h-8 rounded-full object-cover border border-[#eaecf0] shrink-0"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-[#f2f4f7] border border-[#eaecf0] flex items-center justify-center font-bold text-[#535862] shrink-0">
                             {p.name.charAt(0)}
                           </div>
                         )}
                         <div>
-                          <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                          <div className="font-semibold text-[#181d27] flex items-center gap-1.5">
                             <span>{p.name}</span>
                             {p.linkedinUrl && (
                               <a
                                 href={p.linkedinUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="text-blue-600 hover:text-blue-800"
+                                className="text-[#465984] hover:text-[#3f5077]"
                               >
-                                <ExternalLink className="w-3 h-3" />
+                                <ArrowUpRight className="size-3" />
                               </a>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500">{p.role}</div>
+                          <div className="text-[11px] text-[#717680]">{p.role}</div>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#f2f4f7] text-[#424751]">
                         {p.type}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-[11px] text-slate-500">
+                    <td className="py-3 px-4 font-mono text-[11px] text-[#717680]">
                       /blog/author/{p.slug}
                     </td>
 
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3 px-4 text-[#535862]">
                       {p._count?.authoredArticles ?? 0} ditulis / {p._count?.reviewedArticles ?? 0} direview
                     </td>
 
@@ -375,16 +388,16 @@ export default function PeoplePage() {
                         <button
                           type="button"
                           onClick={() => startEdit(p)}
-                          className="p-1.5 text-slate-500 hover:bg-slate-100 rounded"
+                          className="p-1.5 text-[#535862] hover:bg-[#f2f4f7] rounded cursor-pointer"
                         >
-                          <Edit2 className="w-3.5 h-3.5" />
+                          <Edit01 className="size-3.5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDelete(p.id)}
-                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"
+                          className="p-1.5 text-[#d92d20] hover:bg-[#fef3f2] rounded cursor-pointer"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash01 className="size-3.5" />
                         </button>
                       </div>
                     </td>
