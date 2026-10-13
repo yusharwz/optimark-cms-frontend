@@ -1,5 +1,6 @@
 export type ArticleStatus = 'DRAFT' | 'SCHEDULED' | 'PUBLISHED' | 'ARCHIVED';
 export type PersonType = 'AUTHOR' | 'REVIEWER' | 'BOTH';
+export type CommentStatus = 'PENDING' | 'APPROVED' | 'SPAM' | 'REJECTED';
 
 export interface TocItem {
   id: string;
@@ -61,6 +62,41 @@ export interface Article {
   author?: Person | null;
   reviewerId?: string | null;
   reviewer?: Person | null;
+}
+
+export interface CommentItem {
+  id: string;
+  slug: string;
+  authorName: string;
+  authorEmail: string;
+  authorWebsite?: string | null;
+  avatarUrl?: string | null;
+  content: string;
+  status: CommentStatus;
+  likes: number;
+  parentId?: string | null;
+  articleId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  article?: {
+    id: string;
+    title: string;
+    slug: string;
+  } | null;
+  parent?: {
+    id: string;
+    authorName: string;
+    content: string;
+  } | null;
+  replies?: CommentItem[];
+}
+
+export interface CommentStats {
+  total: number;
+  pending: number;
+  approved: number;
+  spam: number;
+  rejected: number;
 }
 
 export interface RedirectItem {

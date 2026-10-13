@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -11,11 +12,23 @@ import {
   Image03,
   Globe01,
   Plus,
+  MessageSquare01,
 } from '@untitledui/icons';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/api';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const [pendingCount, setPendingCount] = useState<number>(0);
+
+  useEffect(() => {
+    api
+      .getCommentStats()
+      .then((stats) => {
+        setPendingCount(stats.pending || 0);
+      })
+      .catch(() => {});
+  }, [pathname]);
 
   const navItems = [
     {
@@ -23,6 +36,13 @@ export function Sidebar() {
       href: '/articles',
       icon: File06,
       active: pathname === '/articles' || pathname.startsWith('/articles/'),
+    },
+    {
+      name: 'Komentar Blog',
+      href: '/comments',
+      icon: MessageSquare01,
+      active: pathname.startsWith('/comments'),
+      badge: pendingCount > 0 ? pendingCount : null,
     },
     {
       name: 'Kategori Topik',
@@ -96,19 +116,26 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors',
                 item.active
                   ? 'bg-[#f2f5f9] text-[#465984] font-semibold'
                   : 'text-[#424751] hover:bg-[#f9fafb] hover:text-[#181d27]'
               )}
             >
-              <Icon
-                className={cn(
-                  'size-4 shrink-0 transition-colors',
-                  item.active ? 'text-[#465984]' : 'text-[#717680]'
-                )}
-              />
-              <span>{item.name}</span>
+              <div className="flex items-center gap-2.5">
+                <Icon
+                  className={cn(
+                    'size-4 shrink-0 transition-colors',
+                    item.active ? 'text-[#465984]' : 'text-[#717680]'
+                  )}
+                />
+                <span>{item.name}</span>
+              </div>
+              {item.badge !== null && item.badge !== undefined && (
+                <span className="bg-[#465984] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-4 text-center">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}

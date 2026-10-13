@@ -1,18 +1,26 @@
-import { Article, Category, Person, RedirectItem, MediaItem, ArticleStatus } from './types';
+import {
+  Article,
+  Category,
+  Person,
+  RedirectItem,
+  MediaItem,
+  CommentItem,
+  CommentStatus,
+  CommentStats,
+} from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  const headers: HeadersInit = {
+async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  const url = `${API_BASE}${endpoint}`;
+  const headers = {
     'Content-Type': 'application/json',
-    ...(options.headers || {}),
+    ...(options?.headers || {}),
   };
 
   const response = await fetch(url, {
     ...options,
     headers,
-    cache: 'no-store',
   });
 
   if (!response.ok) {
@@ -20,6 +28,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     throw new Error(errorBody.message || `Request failed with status ${response.status}`);
   }
 
+  // Handle 204 No Content
   if (response.status === 204) {
     return {} as T;
   }
@@ -29,15 +38,28 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
   // Articles
-  getArticles: (params?: { search?: string; status?: ArticleStatus; categoryId?: string; authorId?: string; page?: number; limit?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.search) searchParams.set('search', params.search);
-    if (params?.status) searchParams.set('status', params.status);
-    if (params?.categoryId) searchParams.set('categoryId', params.categoryId);
-    if (params?.authorId) searchParams.set('authorId', params.authorId);
-    if (params?.page) searchParams.set('page', params.page.toString());
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    return request<{ data: Article[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(`/articles?${searchParams.toString()}`);
+  getArticles: (params?: {
+    status?: string;
+    lang?: string;
+    category?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.lang) query.set('lang', params.lang);
+    if (params?.category) query.set('category', params.category);
+    if (params?.search) query.set('search', params.search);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return request<{
+      items: Article[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/articles?${query.toString()}`);
   },
 
   getArticle: (id: string) => request<Article>(`/articles/${id}`),
@@ -54,12 +76,7 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  deleteArticle: (id: string) =>
-    request<void>(`/articles/${id}`, {
-      method: 'DELETE',
-    }),
-
-  publishArticleNow: (id: string) =>
+  publishArticle: (id: string) =>
     request<Article>(`/articles/${id}/publish`, {
       method: 'POST',
     }),
@@ -67,6 +84,47 @@ export const api = {
   unpublishArticle: (id: string) =>
     request<Article>(`/articles/${id}/unpublish`, {
       method: 'POST',
+    }),
+
+  deleteArticle: (id: string) =>
+    request<void>(`/articles/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Comments (Moderation & Landing Page link)
+  getComments: (params?: {
+    status?: string;
+    slug?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.set('status', params.status);
+    if (params?.slug) query.set('slug', params.slug);
+    if (params?.search) query.set('search', params.search);
+    if (params?.page) query.set('page', params.page.toString());
+    if (params?.limit) query.set('limit', params.limit.toString());
+    return request<{
+      items: CommentItem[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }>(`/comments?${query.toString()}`);
+  },
+
+  getCommentStats: () => request<CommentStats>('/comments/stats'),
+
+  updateCommentStatus: (id: string, status: CommentStatus) =>
+    request<CommentItem>(`/comments/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
+  deleteComment: (id: string) =>
+    request<void>(`/comments/${id}`, {
+      method: 'DELETE',
     }),
 
   // Categories

@@ -32,8 +32,8 @@ export default function ArticlesPage() {
         status: statusFilter || undefined,
         limit: 50,
       });
-      setArticles(res.data);
-      setTotal(res.meta.total);
+      setArticles(res.items);
+      setTotal(res.total);
     } catch (err) {
       console.error('Failed to fetch articles:', err);
     } finally {
@@ -53,7 +53,7 @@ export default function ArticlesPage() {
   const handlePublishNow = async (id: string) => {
     if (!confirm('Publish artikel ini sekarang ke publik?')) return;
     try {
-      await api.publishArticleNow(id);
+      await api.publishArticle(id);
       fetchArticles();
     } catch (err: any) {
       alert(err.message || 'Gagal mempublish artikel');
