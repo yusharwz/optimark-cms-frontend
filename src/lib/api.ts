@@ -7,15 +7,20 @@ import {
   CommentItem,
   CommentStatus,
   CommentStats,
+  User,
+  AuthResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${endpoint}`;
-  const headers = {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('optimark_cms_token') : null;
+
+  const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options?.headers || {}),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options?.headers as Record<string, string> || {}),
   };
 
   const response = await fetch(url, {
@@ -37,6 +42,15 @@ async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // Auth
+  login: (data: { email: string; password: string }) =>
+    request<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getMe: () => request<User>('/auth/me'),
+
   // Articles
   getArticles: (params?: {
     status?: string;

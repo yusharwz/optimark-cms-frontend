@@ -74,6 +74,22 @@ export interface Article {
   reviewerId?: string | null;
   reviewer?: Person | null;
   translations?: ArticleTranslation[];
+  draftData?: any;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: 'ADMIN' | 'EDITOR' | 'AUTHOR';
+  personId?: string | null;
+  person?: Person | null;
+  createdAt?: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  user: User;
 }
 
 export interface CommentItem {

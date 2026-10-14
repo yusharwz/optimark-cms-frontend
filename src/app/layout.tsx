@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { Sidebar } from '@/components/Sidebar';
+import { AuthProvider } from '@/context/AuthContext';
+import { AppLayout } from '@/components/AppLayout';
 
 export const metadata: Metadata = {
   title: 'Optimark SEO CMS',
@@ -20,10 +21,9 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="min-h-screen bg-[#f8fafc] flex antialiased text-[#181d27]">
-        <Sidebar />
-        <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-          {children}
-        </main>
+        <AuthProvider>
+          <AppLayout>{children}</AppLayout>
+        </AuthProvider>
       </body>
     </html>
   );

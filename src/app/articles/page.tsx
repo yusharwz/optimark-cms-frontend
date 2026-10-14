@@ -23,19 +23,33 @@ export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | ''>('');
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 25;
 
-  const fetchArticles = async () => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const fetchArticles = async (targetPage = page, querySearch = debouncedSearch) => {
     try {
       setLoading(true);
       const res = await api.getArticles({
-        search: search || undefined,
+        search: querySearch || undefined,
         status: statusFilter || undefined,
-        limit: 50,
+        page: targetPage,
+        limit,
       });
       setArticles(res.items);
       setTotal(res.total);
+      setTotalPages(res.totalPages || Math.ceil(res.total / limit) || 1);
     } catch (err) {
       console.error('Failed to fetch articles:', err);
     } finally {
@@ -44,12 +58,13 @@ export default function ArticlesPage() {
   };
 
   useEffect(() => {
-    fetchArticles();
-  }, [statusFilter]);
+    fetchArticles(page, debouncedSearch);
+  }, [page, statusFilter, debouncedSearch]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchArticles();
+    setDebouncedSearch(search);
+    setPage(1);
   };
 
   const handlePublishNow = async (id: string) => {
@@ -374,6 +389,67 @@ export default function ArticlesPage() {
               )}
             </tbody>
           </table>
+
+          {/* Pagination Controls */}
+          {total > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white border-t border-[#eaecf0] text-xs text-[#535862]">
+              <div>
+                Menampilkan{' '}
+                <span className="font-semibold text-[#181d27]">
+                  {(page - 1) * limit + 1}
+                </span>{' '}
+                sampai{' '}
+                <span className="font-semibold text-[#181d27]">
+                  {Math.min(page * limit, total)}
+                </span>{' '}
+                dari{' '}
+                <span className="font-semibold text-[#181d27]">{total}</span> artikel
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                  className="px-2.5 py-1.5 rounded-lg border border-[#d5d7da] hover:bg-[#f9fafb] text-[#344054] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  Sebelumnya
+                </button>
+
+                <div className="flex items-center gap-1 px-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                    .map((p, idx, arr) => (
+                      <span key={p} className="flex items-center">
+                        {idx > 0 && arr[idx - 1] !== p - 1 && (
+                          <span className="px-1 text-[#98a2b3]">...</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setPage(p)}
+                          className={`size-7 rounded-lg text-xs font-semibold transition ${
+                            p === page
+                              ? 'bg-[#465984] text-white shadow-xs'
+                              : 'text-[#475467] hover:bg-[#f2f4f7]'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      </span>
+                    ))}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                  className="px-2.5 py-1.5 rounded-lg border border-[#d5d7da] hover:bg-[#f9fafb] text-[#344054] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  Selanjutnya
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

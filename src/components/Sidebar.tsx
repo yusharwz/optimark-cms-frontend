@@ -10,15 +10,17 @@ import {
   Users01,
   SwitchHorizontal01,
   Image03,
-  Globe01,
   Plus,
   MessageSquare01,
+  LogOut01,
 } from '@untitledui/icons';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState<number>(0);
 
   useEffect(() => {
@@ -141,40 +143,32 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer / Public Links */}
-      <div className="p-3 border-t border-[#f2f4f7] bg-[#fdfdfd] space-y-2">
-        <div className="text-[11px] font-semibold text-[#717680] uppercase tracking-wider px-2">
-          Integrasi Live
+      {/* User Session & Logout */}
+      {user && (
+        <div className="p-3 border-t border-[#eaecf0] bg-[#fdfdfd] flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="size-8 rounded-full bg-[#465984] text-white font-semibold text-xs flex items-center justify-center shrink-0">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-[#181d27] truncate">
+                {user.name}
+              </div>
+              <div className="text-[10px] text-[#717680] truncate">
+                {user.role} {user.person ? `• ${user.person.name}` : ''}
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={logout}
+            title="Keluar (Logout)"
+            className="p-1.5 rounded-lg text-[#717680] hover:text-red-600 hover:bg-red-50 transition shrink-0"
+          >
+            <LogOut01 className="size-4" />
+          </button>
         </div>
-        <a
-          href="http://localhost:3001/api/public/sitemap.xml"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-between px-3 py-1.5 text-xs text-[#535862] hover:text-[#465984] hover:bg-white rounded-md border border-[#e9eaeb] transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Globe01 className="size-3.5 text-[#717680]" />
-            <span>Sitemap XML</span>
-          </div>
-          <span className="text-[10px] bg-[#f4f5f6] px-1.5 py-0.5 rounded text-[#717680]">
-            3001
-          </span>
-        </a>
-        <a
-          href="http://localhost:3001/api/public/posts"
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center justify-between px-3 py-1.5 text-xs text-[#535862] hover:text-[#465984] hover:bg-white rounded-md border border-[#e9eaeb] transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Globe01 className="size-3.5 text-[#717680]" />
-            <span>Public API Feed</span>
-          </div>
-          <span className="text-[10px] bg-[#f4f5f6] px-1.5 py-0.5 rounded text-[#717680]">
-            JSON
-          </span>
-        </a>
-      </div>
+      )}
     </aside>
   );
 }
