@@ -181,22 +181,71 @@ export const api = {
   // Media
   getMedia: (limit = 50, offset = 0) => request<MediaItem[]>(`/media?limit=${limit}&offset=${offset}`),
   uploadMedia: async (file: File, altText?: string, convertToWebp = true): Promise<MediaItem> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (altText) formData.append('altText', altText);
-    formData.append('convertToWebp', convertToWebp ? 'true' : 'false');
+    // 1. Request presigned URL from backend to upload direct to R2 (no BE load)
+    try {
+      const mimeType = file.type || 'application/octet-stream';
+      const presigned = await request<{
+        uploadUrl: string;
+        fileUrl: string;
+        key: string;
+        filename: string;
+        mimeType: string;
+        altText: string;
+      }>('/media/presigned-url', {
+        method: 'POST',
+        body: JSON.stringify({
+          filename: file.name,
+          mimeType,
+          size: file.size,
+          altText,
+        }),
+      });
 
-    const res = await fetch(`${API_BASE}/media/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+      // 2. Direct PUT to Cloudflare R2 presigned URL
+      const r2Res = await fetch(presigned.uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': mimeType,
+        },
+        body: file,
+      });
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ message: res.statusText }));
-      throw new Error(err.message || 'Upload failed');
+      if (!r2Res.ok) {
+        throw new Error(`R2 direct upload failed with status ${r2Res.status}`);
+      }
+
+      // 3. Confirm upload with backend to persist media metadata in DB
+      return await request<MediaItem>('/media/confirm', {
+        method: 'POST',
+        body: JSON.stringify({
+          key: presigned.key,
+          url: presigned.fileUrl,
+          filename: presigned.filename,
+          mimeType: presigned.mimeType,
+          size: file.size,
+          altText: presigned.altText,
+        }),
+      });
+    } catch (presignedErr) {
+      console.warn('Presigned upload failed, falling back to backend upload:', presignedErr);
+      // Fallback: direct multipart upload to backend
+      const formData = new FormData();
+      formData.append('file', file);
+      if (altText) formData.append('altText', altText);
+      formData.append('convertToWebp', convertToWebp ? 'true' : 'false');
+
+      const res = await fetch(`${API_BASE}/media/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || 'Upload failed');
+      }
+
+      return res.json();
     }
-
-    return res.json();
   },
   updateMediaAlt: (id: string, altText: string) =>
     request<MediaItem>(`/media/${id}/alt`, {
