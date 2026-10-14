@@ -11,10 +11,20 @@ import {
   AuthResponse,
 } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+function getApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL.replace(/\/+$/, '');
+  }
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('dritech.co.id')) {
+      return 'https://optimark-staging-api.dritech.co.id/api';
+    }
+  }
+  return 'http://localhost:3001/api';
+}
 
 async function request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const url = `${API_BASE}${endpoint}`;
+  const url = `${getApiBase()}${endpoint}`;
   const token = typeof window !== 'undefined' ? localStorage.getItem('optimark_cms_token') : null;
 
   const headers: Record<string, string> = {
@@ -254,7 +264,7 @@ export const api = {
       if (altText) formData.append('altText', altText);
       formData.append('convertToWebp', convertToWebp ? 'true' : 'false');
 
-      const res = await fetch(`${API_BASE}/media/upload`, {
+      const res = await fetch(`${getApiBase()}/media/upload`, {
         method: 'POST',
         body: formData,
       });
