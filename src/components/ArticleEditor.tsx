@@ -116,35 +116,8 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
       .catch((err) => console.error('Failed to load taxonomy:', err));
   }, [initialData, user]);
 
-  // Check if form is dirty (unsaved changes)
-  const isDirty = useMemo(() => {
-    if (!initialData) {
-      return Boolean(
-        titleId ||
-        excerptId ||
-        contentId ||
-        slug ||
-        coverImageUrl ||
-        titleEn ||
-        contentEn
-      );
-    }
-    const initialTitle = initialId?.title || initialData.title || '';
-    const initialExcerpt = initialId?.excerpt || initialData.excerpt || '';
-    const initialContent = initialId?.content || initialData.content || '';
-    return (
-      titleId !== initialTitle ||
-      excerptId !== initialExcerpt ||
-      contentId !== initialContent ||
-      slug !== (initialData.slug || '') ||
-      coverImageUrl !== (initialData.coverImageUrl || '') ||
-      categoryId !== (initialData.categoryId || '') ||
-      authorId !== (initialData.authorId || '') ||
-      selectedStatus !== initialData.status
-    );
-  }, [
-    initialData,
-    initialId,
+  // Form baseline snapshot for reliable isDirty tracking
+  const currentSnapshot = JSON.stringify({
     titleId,
     excerptId,
     contentId,
@@ -154,8 +127,33 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
     authorId,
     selectedStatus,
     titleEn,
+    excerptEn,
     contentEn,
-  ]);
+    metaTitleId,
+    metaDescriptionId,
+    metaTitleEn,
+    metaDescriptionEn,
+  });
+
+  const [baselineSnapshot, setBaselineSnapshot] = useState<string>('');
+
+  useEffect(() => {
+    // Initialize baseline snapshot once taxonomy and initialData are settled
+    if (!baselineSnapshot) {
+      setBaselineSnapshot(currentSnapshot);
+    }
+  }, [currentSnapshot, baselineSnapshot]);
+
+  // Check if form is dirty (unsaved changes)
+  const isDirty = useMemo(() => {
+    if (!baselineSnapshot) {
+      if (!initialData) {
+        return Boolean(titleId || excerptId || contentId || slug || coverImageUrl);
+      }
+      return false;
+    }
+    return currentSnapshot !== baselineSnapshot;
+  }, [baselineSnapshot, currentSnapshot, initialData, titleId, excerptId, contentId, slug, coverImageUrl]);
 
   // Native beforeunload window guard on reload / close
   useEffect(() => {
@@ -167,6 +165,23 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
+
+  // Intercept browser back navigation (popstate)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.history.pushState({ page: 'article-editor' }, '', window.location.href);
+
+    const handlePopState = () => {
+      if (isDirty) {
+        window.history.pushState({ page: 'article-editor' }, '', window.location.href);
+        setPendingNavigation('/articles');
+        setShowUnsavedModal(true);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [isDirty]);
 
   // Intercept back navigation
@@ -330,6 +345,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
 
       if (initialData) {
         await api.updateArticle(initialData.id, payload);
+        setBaselineSnapshot(currentSnapshot);
         if (isRevision) {
           setMessage({
             type: 'success',
@@ -343,6 +359,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         }
       } else {
         const created = await api.createArticle(payload);
+        setBaselineSnapshot(currentSnapshot);
         setMessage({
           type: 'success',
           text: `Artikel baru berhasil dibuat dengan status ${effectiveStatus}!`,

@@ -646,6 +646,44 @@ export default function PeoplePage() {
                       </div>
                       {experienceId.map((item, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.logo ? (
+                              <div className="relative group">
+                                <img
+                                  src={item.logo}
+                                  alt={item.org || 'Logo'}
+                                  className="size-7 rounded object-contain border border-[#eaecf0] bg-white p-0.5"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateExperienceItem('id', idx, 'logo', '')}
+                                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Hapus Logo"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : null}
+                            <label className="cursor-pointer px-2 py-1.5 border border-[#d5d7da] rounded-md hover:bg-[#f2f4f7] text-[#535862] flex items-center gap-1 text-[11px] shrink-0" title="Upload Logo">
+                              <Upload01 className="size-3 text-[#465984]" />
+                              <span className="hidden sm:inline">{item.logo ? 'Ganti' : 'Logo'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    updateExperienceItem('id', idx, 'logo', res.url);
+                                  } catch (err: any) {
+                                    alert('Gagal upload logo: ' + err.message);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
                           <input
                             type="text"
                             placeholder="Posisi (e.g. Senior SEO)"
@@ -694,6 +732,44 @@ export default function PeoplePage() {
                       </div>
                       {educationId.map((item, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.logo ? (
+                              <div className="relative group">
+                                <img
+                                  src={item.logo}
+                                  alt={item.org || 'Logo'}
+                                  className="size-7 rounded object-contain border border-[#eaecf0] bg-white p-0.5"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateEducationItem('id', idx, 'logo', '')}
+                                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Hapus Logo"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : null}
+                            <label className="cursor-pointer px-2 py-1.5 border border-[#d5d7da] rounded-md hover:bg-[#f2f4f7] text-[#535862] flex items-center gap-1 text-[11px] shrink-0" title="Upload Logo">
+                              <Upload01 className="size-3 text-[#465984]" />
+                              <span className="hidden sm:inline">{item.logo ? 'Ganti' : 'Logo'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    updateEducationItem('id', idx, 'logo', res.url);
+                                  } catch (err: any) {
+                                    alert('Gagal upload logo: ' + err.message);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
                           <input
                             type="text"
                             placeholder="Gelar / Jurusan"
@@ -798,6 +874,44 @@ export default function PeoplePage() {
                       </div>
                       {experienceEn.map((item, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.logo ? (
+                              <div className="relative group">
+                                <img
+                                  src={item.logo}
+                                  alt={item.org || 'Logo'}
+                                  className="size-7 rounded object-contain border border-[#eaecf0] bg-white p-0.5"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateExperienceItem('en', idx, 'logo', '')}
+                                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove Logo"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : null}
+                            <label className="cursor-pointer px-2 py-1.5 border border-[#d5d7da] rounded-md hover:bg-[#f2f4f7] text-[#535862] flex items-center gap-1 text-[11px] shrink-0" title="Upload Logo">
+                              <Upload01 className="size-3 text-[#465984]" />
+                              <span className="hidden sm:inline">{item.logo ? 'Change' : 'Logo'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    updateExperienceItem('en', idx, 'logo', res.url);
+                                  } catch (err: any) {
+                                    alert('Failed to upload logo: ' + err.message);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
                           <input
                             type="text"
                             placeholder="Title (e.g. Lead Consultant)"
@@ -846,6 +960,44 @@ export default function PeoplePage() {
                       </div>
                       {educationEn.map((item, idx) => (
                         <div key={idx} className="flex gap-2 items-center">
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {item.logo ? (
+                              <div className="relative group">
+                                <img
+                                  src={item.logo}
+                                  alt={item.org || 'Logo'}
+                                  className="size-7 rounded object-contain border border-[#eaecf0] bg-white p-0.5"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => updateEducationItem('en', idx, 'logo', '')}
+                                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 text-[8px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove Logo"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ) : null}
+                            <label className="cursor-pointer px-2 py-1.5 border border-[#d5d7da] rounded-md hover:bg-[#f2f4f7] text-[#535862] flex items-center gap-1 text-[11px] shrink-0" title="Upload Logo">
+                              <Upload01 className="size-3 text-[#465984]" />
+                              <span className="hidden sm:inline">{item.logo ? 'Change' : 'Logo'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    updateEducationItem('en', idx, 'logo', res.url);
+                                  } catch (err: any) {
+                                    alert('Failed to upload logo: ' + err.message);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
                           <input
                             type="text"
                             placeholder="Degree / Major"

@@ -11,8 +11,16 @@ export interface TocItem {
 export interface Category {
   id: string;
   name: string;
+  nameId?: string | null;
+  nameEn?: string | null;
   slug: string;
   description?: string | null;
+  descriptionId?: string | null;
+  descriptionEn?: string | null;
+  metaTitleId?: string | null;
+  metaTitleEn?: string | null;
+  metaDescriptionId?: string | null;
+  metaDescriptionEn?: string | null;
   sortOrder: number;
   _count?: {
     articles: number;

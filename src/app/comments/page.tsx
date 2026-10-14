@@ -32,7 +32,15 @@ export default function CommentsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const loadData = useCallback(async () => {
     try {
@@ -40,7 +48,7 @@ export default function CommentsPage() {
       const [commentsRes, statsRes] = await Promise.all([
         api.getComments({
           status: statusFilter === 'ALL' ? undefined : statusFilter,
-          search: search.trim() || undefined,
+          search: debouncedSearch.trim() || undefined,
           limit: 50,
         }),
         api.getCommentStats(),
@@ -53,7 +61,7 @@ export default function CommentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, search]);
+  }, [statusFilter, debouncedSearch]);
 
   useEffect(() => {
     loadData();

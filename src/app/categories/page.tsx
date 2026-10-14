@@ -4,19 +4,35 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { Category } from '@/lib/types';
-import { Plus, Trash01, Edit01, Check, XClose } from '@untitledui/icons';
+import { Plus, Trash01, Edit01, XClose, Globe01 } from '@untitledui/icons';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Form state
-  const [isAdding, setIsAdding] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [name, setName] = useState('');
+  // Modal form state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [activeTab, setActiveTab] = useState<'id' | 'en'>('id');
+
+  // Form fields
   const [slug, setSlug] = useState('');
-  const [description, setDescription] = useState('');
   const [sortOrder, setSortOrder] = useState(0);
+
+  // ID fields
+  const [nameId, setNameId] = useState('');
+  const [descriptionId, setDescriptionId] = useState('');
+  const [metaTitleId, setMetaTitleId] = useState('');
+  const [metaDescriptionId, setMetaDescriptionId] = useState('');
+
+  // EN fields
+  const [nameEn, setNameEn] = useState('');
+  const [descriptionEn, setDescriptionEn] = useState('');
+  const [metaTitleEn, setMetaTitleEn] = useState('');
+  const [metaDescriptionEn, setMetaDescriptionEn] = useState('');
+
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const loadCategories = async () => {
     try {
@@ -34,53 +50,91 @@ export default function CategoriesPage() {
     loadCategories();
   }, []);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-
-    try {
-      await api.createCategory({
-        name,
-        slug: slug.trim() || undefined,
-        description: description.trim() || undefined,
-        sortOrder: Number(sortOrder) || 0,
-      });
-      setName('');
-      setSlug('');
-      setDescription('');
-      setSortOrder(0);
-      setIsAdding(false);
-      loadCategories();
-    } catch (err: any) {
-      alert(err.message || 'Gagal membuat kategori');
-    }
+  const openCreateModal = () => {
+    setEditingCategory(null);
+    setSlug('');
+    setSortOrder(categories.length + 1);
+    setNameId('');
+    setDescriptionId('');
+    setMetaTitleId('');
+    setMetaDescriptionId('');
+    setNameEn('');
+    setDescriptionEn('');
+    setMetaTitleEn('');
+    setMetaDescriptionEn('');
+    setActiveTab('id');
+    setError('');
+    setIsModalOpen(true);
   };
 
-  const startEdit = (cat: Category) => {
-    setEditingId(cat.id);
-    setName(cat.name);
+  const openEditModal = (cat: Category) => {
+    setEditingCategory(cat);
     setSlug(cat.slug);
-    setDescription(cat.description || '');
-    setSortOrder(cat.sortOrder);
+    setSortOrder(cat.sortOrder ?? 0);
+    setNameId(cat.nameId || cat.name || '');
+    setDescriptionId(cat.descriptionId || cat.description || '');
+    setMetaTitleId(cat.metaTitleId || '');
+    setMetaDescriptionId(cat.metaDescriptionId || '');
+    setNameEn(cat.nameEn || '');
+    setDescriptionEn(cat.descriptionEn || '');
+    setMetaTitleEn(cat.metaTitleEn || '');
+    setMetaDescriptionEn(cat.metaDescriptionEn || '');
+    setActiveTab('id');
+    setError('');
+    setIsModalOpen(true);
   };
 
-  const handleUpdate = async (id: string) => {
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const primaryName = nameId.trim() || nameEn.trim();
+    if (!primaryName) {
+      setError('Nama kategori wajib diisi minimal pada salah satu bahasa.');
+      return;
+    }
+
     try {
-      await api.updateCategory(id, {
-        name,
-        slug: slug.trim() || undefined,
-        description: description.trim() || undefined,
+      setSaving(true);
+      setError('');
+
+      const autoSlug =
+        slug.trim() ||
+        primaryName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+
+      const payload = {
+        name: primaryName,
+        nameId: nameId.trim() || primaryName,
+        nameEn: nameEn.trim() || undefined,
+        slug: autoSlug,
+        description: descriptionId.trim() || descriptionEn.trim() || undefined,
+        descriptionId: descriptionId.trim() || undefined,
+        descriptionEn: descriptionEn.trim() || undefined,
+        metaTitleId: metaTitleId.trim() || undefined,
+        metaTitleEn: metaTitleEn.trim() || undefined,
+        metaDescriptionId: metaDescriptionId.trim() || undefined,
+        metaDescriptionEn: metaDescriptionEn.trim() || undefined,
         sortOrder: Number(sortOrder) || 0,
-      });
-      setEditingId(null);
+      };
+
+      if (editingCategory) {
+        await api.updateCategory(editingCategory.id, payload);
+      } else {
+        await api.createCategory(payload);
+      }
+
+      setIsModalOpen(false);
       loadCategories();
     } catch (err: any) {
-      alert(err.message || 'Gagal update kategori');
+      setError(err.message || 'Gagal menyimpan kategori');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Hapus kategori ini?')) return;
+  const handleDelete = async (id: string, catName: string) => {
+    if (!confirm(`Hapus kategori "${catName}"? Artikel di bawah kategori ini akan terpengaruh.`)) return;
     try {
       await api.deleteCategory(id);
       loadCategories();
@@ -92,203 +146,103 @@ export default function CategoriesPage() {
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
-        title="Kategori Topik SEO"
-        description="Kelola taksonomi artikel untuk mengelompokkan kata kunci dan topical authority."
+        title="Kategori Topik SEO (Bilingual)"
+        description="Kelola taksonomi artikel dwibahasa (ID/EN) dan metadata SEO dinamis untuk Google Organic Search."
         actions={
           <button
             type="button"
-            onClick={() => {
-              setIsAdding(!isAdding);
-              setEditingId(null);
-              setName('');
-              setSlug('');
-              setDescription('');
-            }}
+            onClick={openCreateModal}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#465984] hover:bg-[#3f5077] text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
           >
             <Plus className="size-3.5 text-white" />
-            <span>Tambah Kategori</span>
+            <span>Tambah Kategori Baru</span>
           </button>
         }
       />
 
-      <div className="p-8 space-y-6 max-w-5xl">
-        {isAdding && (
-          <form
-            onSubmit={handleCreate}
-            className="bg-white p-6 rounded-2xl border border-[#eaecf0] shadow-xs space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-[#181d27] uppercase tracking-wider">
-                Tambah Kategori Baru
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className="text-[#717680] hover:text-[#181d27] cursor-pointer"
-              >
-                <XClose className="size-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#344054] mb-1">Nama Kategori</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    if (!slug) {
-                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
-                    }
-                  }}
-                  placeholder="Misal: SEO & Search"
-                  required
-                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#344054] mb-1">Custom Slug</label>
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="seo-search"
-                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-semibold text-[#344054] mb-1">Deskripsi Singkat</label>
-                <input
-                  type="text"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Deskripsi topik untuk halaman kategori publik..."
-                  className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className="px-3.5 py-2 text-xs font-semibold text-[#344054] hover:bg-[#f9fafb] border border-[#d5d7da] rounded-lg cursor-pointer"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 text-xs bg-[#465984] hover:bg-[#3f5077] text-white font-semibold rounded-lg shadow-xs cursor-pointer"
-              >
-                Simpan Kategori
-              </button>
-            </div>
-          </form>
-        )}
-
+      <div className="p-8 space-y-6 max-w-6xl">
         <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4">Nama & Deskripsi</th>
-                <th className="py-3 px-4">Slug URL</th>
-                <th className="py-3 px-4">Jumlah Artikel</th>
+                <th className="py-3 px-4">Nama Topik (ID / EN)</th>
+                <th className="py-3 px-4">Deskripsi Dinamis</th>
+                <th className="py-3 px-4">URL Kategori</th>
+                <th className="py-3 px-4">Artikel</th>
                 <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f2f4f7]">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="py-6 text-center text-[#717680]">
-                    Memuat kategori...
+                  <td colSpan={5} className="py-8 text-center text-[#717680]">
+                    Memuat daftar kategori...
                   </td>
                 </tr>
               ) : categories.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-[#717680]">
-                    Belum ada kategori.
+                  <td colSpan={5} className="py-10 text-center text-[#717680]">
+                    Belum ada kategori yang terdaftar.
                   </td>
                 </tr>
               ) : (
                 categories.map((cat) => (
                   <tr key={cat.id} className="hover:bg-[#f9fafb] transition-colors">
-                    <td className="py-3 px-4">
-                      {editingId === cat.id ? (
-                        <div className="space-y-1">
-                          <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="p-1.5 border border-[#d5d7da] rounded text-xs w-full text-[#181d27]"
-                          />
-                          <input
-                            type="text"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Deskripsi..."
-                            className="p-1.5 border border-[#d5d7da] rounded text-[11px] w-full text-[#535862]"
-                          />
+                    <td className="py-3.5 px-4">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-[#181d27]">{cat.nameId || cat.name}</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 font-mono">ID</span>
                         </div>
-                      ) : (
-                        <div>
-                          <span className="font-semibold text-[#181d27] block">{cat.name}</span>
-                          {cat.description && (
-                            <span className="text-[11px] text-[#717680] block">{cat.description}</span>
-                          )}
-                        </div>
+                        {cat.nameEn && (
+                          <div className="flex items-center gap-1.5 text-[#535862]">
+                            <span>{cat.nameEn}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 font-mono">EN</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="py-3.5 px-4 max-w-xs truncate text-[#535862]">
+                      <span className="block truncate text-[11px] text-[#414651]">
+                        {cat.descriptionId || cat.description || '-'}
+                      </span>
+                      {cat.descriptionEn && (
+                        <span className="block truncate text-[11px] text-[#717680] italic">
+                          EN: {cat.descriptionEn}
+                        </span>
                       )}
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-[11px] text-[#717680]">
+                    <td className="py-3.5 px-4 font-mono text-[11px] text-[#717680]">
                       /blog/kategori/{cat.slug}
                     </td>
 
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       <span className="px-2 py-0.5 rounded-md bg-[#f2f4f7] text-[#424751] font-semibold text-[11px]">
                         {cat._count?.articles ?? 0} artikel
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-right">
-                      {editingId === cat.id ? (
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleUpdate(cat.id)}
-                            className="p-1 text-[#079455] hover:bg-[#ecfdf3] rounded cursor-pointer"
-                          >
-                            <Check className="size-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            className="p-1 text-[#717680] hover:bg-[#f2f4f7] rounded cursor-pointer"
-                          >
-                            <XClose className="size-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="inline-flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(cat)}
-                            className="p-1.5 text-[#535862] hover:bg-[#f2f4f7] rounded cursor-pointer"
-                          >
-                            <Edit01 className="size-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(cat.id)}
-                            className="p-1.5 text-[#d92d20] hover:bg-[#fef3f2] rounded cursor-pointer"
-                          >
-                            <Trash01 className="size-3.5" />
-                          </button>
-                        </div>
-                      )}
+                    <td className="py-3.5 px-4 text-right">
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => openEditModal(cat)}
+                          className="p-1.5 text-[#535862] hover:bg-[#f2f4f7] rounded cursor-pointer"
+                          title="Edit Kategori & SEO"
+                        >
+                          <Edit01 className="size-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(cat.id, cat.name)}
+                          className="p-1.5 text-[#d92d20] hover:bg-[#fef3f2] rounded cursor-pointer"
+                          title="Hapus Kategori"
+                        >
+                          <Trash01 className="size-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -297,6 +251,244 @@ export default function CategoriesPage() {
           </table>
         </div>
       </div>
+
+      {/* Modal Add / Edit Category */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl border border-[#eaecf0] shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="px-6 py-4 border-b border-[#eaecf0] flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-[#181d27]">
+                  {editingCategory ? 'Edit Kategori Topik & SEO' : 'Tambah Kategori Topik Baru'}
+                </h3>
+                <p className="text-xs text-[#717680]">
+                  Pengaturan taksonomi dwibahasa dan metadata Google SEO
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="text-[#717680] hover:text-[#181d27] cursor-pointer"
+              >
+                <XClose className="size-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+                  {error}
+                </div>
+              )}
+
+              {/* General Settings: Slug & Sort Order */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[#eaecf0]">
+                <div>
+                  <label className="block text-xs font-semibold text-[#344054] mb-1">
+                    Slug URL Kategori *
+                  </label>
+                  <div className="flex items-center">
+                    <span className="text-[11px] text-[#717680] bg-[#f2f4f7] px-2 py-2 border border-r-0 border-[#d5d7da] rounded-l-lg font-mono">
+                      /kategori/
+                    </span>
+                    <input
+                      type="text"
+                      value={slug}
+                      onChange={(e) => setSlug(e.target.value)}
+                      placeholder="seo"
+                      required
+                      className="w-full text-xs p-2 border border-[#d5d7da] rounded-r-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#344054] mb-1">
+                    Urutan Tampilan (Sort Order)
+                  </label>
+                  <input
+                    type="number"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(Number(e.target.value))}
+                    min={0}
+                    className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                  />
+                </div>
+              </div>
+
+              {/* Language Tabs */}
+              <div>
+                <div className="flex items-center gap-2 border-b border-[#eaecf0] pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('id')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      activeTab === 'id'
+                        ? 'bg-[#465984] text-white'
+                        : 'bg-[#f2f4f7] text-[#535862] hover:bg-[#e4e7ec]'
+                    }`}
+                  >
+                    <span>🇮🇩 Bahasa Indonesia (ID)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('en')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      activeTab === 'en'
+                        ? 'bg-[#465984] text-white'
+                        : 'bg-[#f2f4f7] text-[#535862] hover:bg-[#e4e7ec]'
+                    }`}
+                  >
+                    <span>🇬🇧 English (EN)</span>
+                  </button>
+                </div>
+
+                {activeTab === 'id' ? (
+                  <div className="pt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#344054] mb-1">
+                        Nama Kategori (ID) *
+                      </label>
+                      <input
+                        type="text"
+                        value={nameId}
+                        onChange={(e) => {
+                          setNameId(e.target.value);
+                          if (!slug && !editingCategory) {
+                            setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+                          }
+                        }}
+                        placeholder="Contoh: SEO"
+                        className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#344054] mb-1">
+                        Deskripsi Topik (ID)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={descriptionId}
+                        onChange={(e) => setDescriptionId(e.target.value)}
+                        placeholder="Panduan praktis optimasi mesin pencari untuk bisnis lokal dan UMKM..."
+                        className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                      />
+                    </div>
+
+                    <div className="pt-2 border-t border-dashed border-[#eaecf0] space-y-3">
+                      <div className="flex items-center gap-1.5 text-[#465984] font-semibold text-xs">
+                        <Globe01 className="size-3.5" />
+                        <span>SEO Meta Tags (ID)</span>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#535862] mb-1">
+                          Meta Title (ID)
+                        </label>
+                        <input
+                          type="text"
+                          value={metaTitleId}
+                          onChange={(e) => setMetaTitleId(e.target.value)}
+                          placeholder="Artikel & Panduan SEO | Optimark"
+                          className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#535862] mb-1">
+                          Meta Description (ID)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={metaDescriptionId}
+                          onChange={(e) => setMetaDescriptionId(e.target.value)}
+                          placeholder="Kumpulan panduan praktis SEO, riset keyword..."
+                          className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-[#344054] mb-1">
+                        Category Name (EN)
+                      </label>
+                      <input
+                        type="text"
+                        value={nameEn}
+                        onChange={(e) => setNameEn(e.target.value)}
+                        placeholder="Example: SEO"
+                        className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#344054] mb-1">
+                        Topic Description (EN)
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={descriptionEn}
+                        onChange={(e) => setDescriptionEn(e.target.value)}
+                        placeholder="Practical search engine optimization guides for local businesses and SMBs..."
+                        className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                      />
+                    </div>
+
+                    <div className="pt-2 border-t border-dashed border-[#eaecf0] space-y-3">
+                      <div className="flex items-center gap-1.5 text-[#465984] font-semibold text-xs">
+                        <Globe01 className="size-3.5" />
+                        <span>SEO Meta Tags (EN)</span>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#535862] mb-1">
+                          Meta Title (EN)
+                        </label>
+                        <input
+                          type="text"
+                          value={metaTitleEn}
+                          onChange={(e) => setMetaTitleEn(e.target.value)}
+                          placeholder="SEO Articles & Guides | Optimark"
+                          className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-[#535862] mb-1">
+                          Meta Description (EN)
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={metaDescriptionEn}
+                          onChange={(e) => setMetaDescriptionEn(e.target.value)}
+                          placeholder="Practical SEO guides, keyword research, and Google Search Console optimization..."
+                          className="w-full text-xs p-2 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-[#eaecf0]">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-[#344054] hover:bg-[#f9fafb] border border-[#d5d7da] rounded-lg cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2 text-xs bg-[#465984] hover:bg-[#3f5077] text-white font-semibold rounded-lg shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {saving ? 'Menyimpan...' : 'Simpan Kategori'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
