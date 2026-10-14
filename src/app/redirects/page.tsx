@@ -132,7 +132,7 @@ export default function RedirectsPage() {
         }
       />
 
-      <div className="p-8 space-y-6 max-w-5xl">
+      <div className="p-4 sm:p-8 space-y-6 max-w-5xl">
         {/* SEO Tip Card */}
         <div className="p-4 rounded-xl border border-[#c6d2e6] bg-[#f2f5f9] text-[#1e273b] text-xs flex items-start gap-3 shadow-xs">
           <InfoCircle className="size-4 text-[#465984] shrink-0 mt-0.5" />
@@ -253,7 +253,8 @@ export default function RedirectsPage() {
 
         {/* Redirects Table */}
         <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
-          <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs border-collapse min-w-[640px]">
             <thead>
               <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Pengalihan (Source → Target)</th>
@@ -335,6 +336,7 @@ export default function RedirectsPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

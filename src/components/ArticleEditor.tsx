@@ -75,7 +75,10 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const [featured, setFeatured] = useState(initialData?.featured || false);
 
   // Publication Status Selection
-  const isCurrentlyPublished = initialData?.status === 'PUBLISHED';
+  const [currentStatus, setCurrentStatus] = useState<PublishOption>(
+    initialData ? initialData.status : 'DRAFT'
+  );
+  const isCurrentlyPublished = currentStatus === 'PUBLISHED';
   const [selectedStatus, setSelectedStatus] = useState<PublishOption>(
     initialData ? initialData.status : 'DRAFT'
   );
@@ -352,6 +355,8 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
             text: 'Draf revisi berhasil disimpan! Versi tayang di landing page tetap aktif dengan konten lama hingga Anda mempublikasikan revisi ini.',
           });
         } else {
+          setCurrentStatus(effectiveStatus);
+          setSelectedStatus(effectiveStatus);
           setMessage({
             type: 'success',
             text: `Artikel berhasil diperbarui sebagai ${effectiveStatus}!`,
@@ -360,6 +365,8 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
       } else {
         const created = await api.createArticle(payload);
         setBaselineSnapshot(currentSnapshot);
+        setCurrentStatus(effectiveStatus);
+        setSelectedStatus(effectiveStatus);
         setMessage({
           type: 'success',
           text: `Artikel baru berhasil dibuat dengan status ${effectiveStatus}!`,
@@ -395,7 +402,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         };
       case 'PUBLISHED':
         return {
-          label: initialData?.status === 'PUBLISHED' ? 'Perbarui Publikasi' : 'Publikasikan Sekarang',
+          label: currentStatus === 'PUBLISHED' ? 'Perbarui Publikasi' : 'Publikasikan Sekarang',
           icon: Send01,
           className: 'bg-[#465984] hover:bg-[#38476a] text-white shadow-xs',
         };
@@ -449,19 +456,19 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
               <h1 className="text-xl font-bold text-[#181d27] tracking-tight">
                 {initialData ? 'Edit Artikel' : 'Tulis Artikel Baru'}
               </h1>
-              {initialData && (
-                <span
-                  className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${
-                    initialData.status === 'PUBLISHED'
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                      : initialData.status === 'SCHEDULED'
-                      ? 'bg-purple-50 text-purple-700 border border-purple-200'
-                      : 'bg-[#f8f9fa] text-[#535862] border border-[#d5d7da]'
-                  }`}
-                >
-                  {initialData.status}
-                </span>
-              )}
+              <span
+                className={`text-xs px-2.5 py-0.5 rounded-full font-semibold transition-colors ${
+                  currentStatus === 'PUBLISHED'
+                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    : currentStatus === 'SCHEDULED'
+                    ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                    : currentStatus === 'ARCHIVED'
+                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                    : 'bg-[#f8f9fa] text-[#535862] border border-[#d5d7da]'
+                }`}
+              >
+                {currentStatus}
+              </span>
             </div>
             <p className="text-xs text-[#535862] mt-0.5">
               Atur konten, dwi-bahasa (ID & EN), metadata SEO, dan status publikasi.

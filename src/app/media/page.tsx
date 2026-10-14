@@ -84,7 +84,7 @@ export default function MediaPage() {
         }
       />
 
-      <div className="p-8 space-y-6 max-w-7xl">
+      <div className="p-4 sm:p-8 space-y-6 max-w-7xl">
         {loading ? (
           <div className="py-12 text-center text-[#717680] text-xs">
             Memuat aset media dari Cloudflare R2...

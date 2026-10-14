@@ -20,7 +20,12 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 
-export function Sidebar() {
+interface SidebarProps {
+  onNavigate?: () => void;
+  isMobile?: boolean;
+}
+
+export function Sidebar({ onNavigate, isMobile = false }: SidebarProps = {}) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState<number>(0);
@@ -76,10 +81,19 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 border-r border-[#eaecf0] bg-white flex flex-col h-screen sticky top-0 z-30 select-none">
+    <aside
+      className={cn(
+        'bg-white flex flex-col select-none',
+        isMobile ? 'w-full h-full' : 'w-64 border-r border-[#eaecf0] h-screen sticky top-0 z-30'
+      )}
+    >
       {/* Brand Header */}
       <div className="h-16 flex items-center px-5 border-b border-[#f2f4f7] justify-between">
-        <Link href="/articles" className="flex items-center gap-2.5">
+        <Link
+          href="/articles"
+          onClick={() => onNavigate?.()}
+          className="flex items-center gap-2.5"
+        >
           <Image
             src="/assets/optimark-logo.svg"
             alt="Optimark"
@@ -102,6 +116,7 @@ export function Sidebar() {
       <div className="p-3">
         <Link
           href="/articles/new"
+          onClick={() => onNavigate?.()}
           className="flex items-center justify-center gap-2 w-full py-2.5 px-3 bg-[#465984] hover:bg-[#3f5077] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors"
         >
           <Plus className="size-4 shrink-0 text-white" />
@@ -120,6 +135,7 @@ export function Sidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => onNavigate?.()}
               className={cn(
                 'flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors',
                 item.active

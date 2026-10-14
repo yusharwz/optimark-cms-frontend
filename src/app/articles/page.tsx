@@ -137,8 +137,8 @@ export default function ArticlesPage() {
         </div>
 
         {/* Filter and Search Bar */}
-        <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-1.5">
+        <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5 flex-wrap overflow-x-auto pb-1 md:pb-0">
             <button
               type="button"
               onClick={() => setStatusFilter('')}
@@ -196,20 +196,20 @@ export default function ArticlesPage() {
             </button>
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2">
-            <div className="relative">
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
               <SearchLg className="size-4 text-[#717680] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Cari judul atau slug..."
-                className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-64"
+                className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-full"
               />
             </div>
             <button
               type="submit"
-              className="px-3 py-1.5 bg-[#f9fafb] hover:bg-[#f2f4f7] text-[#424751] text-xs font-semibold rounded-lg border border-[#d5d7da] transition cursor-pointer"
+              className="px-3 py-1.5 bg-[#f9fafb] hover:bg-[#f2f4f7] text-[#424751] text-xs font-semibold rounded-lg border border-[#d5d7da] transition cursor-pointer shrink-0"
             >
               Cari
             </button>
@@ -218,7 +218,8 @@ export default function ArticlesPage() {
 
         {/* Articles Table */}
         <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
-          <table className="w-full text-left border-collapse text-xs">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse text-xs min-w-[760px]">
             <thead>
               <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Artikel & Slug</th>
@@ -389,6 +390,7 @@ export default function ArticlesPage() {
               )}
             </tbody>
           </table>
+          </div>
 
           {/* Pagination Controls */}
           {total > 0 && (

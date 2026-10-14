@@ -160,9 +160,10 @@ export default function CategoriesPage() {
         }
       />
 
-      <div className="p-8 space-y-6 max-w-6xl">
+      <div className="p-4 sm:p-8 space-y-6 max-w-6xl">
         <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
-          <table className="w-full text-left text-xs border-collapse">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-xs border-collapse min-w-[680px]">
             <thead>
               <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Nama Topik (ID / EN)</th>
@@ -249,6 +250,7 @@ export default function CategoriesPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

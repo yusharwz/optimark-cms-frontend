@@ -58,7 +58,7 @@ export default function PeoplePage() {
   // Credentials Fields
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('');
-  const [userRole, setUserRole] = useState<'AUTHOR' | 'EDITOR' | 'ADMIN'>('AUTHOR');
+  const [userRole] = useState<'AUTHOR' | 'EDITOR' | 'ADMIN'>('AUTHOR');
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -114,7 +114,6 @@ export default function PeoplePage() {
     setEducationEn([]);
     setUserEmail('');
     setUserPassword('');
-    setUserRole('AUTHOR');
     setEditingId(null);
     setActiveLangTab('id');
   };
@@ -144,10 +143,8 @@ export default function PeoplePage() {
 
     if (p.user) {
       setUserEmail(p.user.email);
-      setUserRole(p.user.role as any);
     } else {
       setUserEmail('');
-      setUserRole('AUTHOR');
     }
     setUserPassword('');
     setIsAdding(true);
@@ -317,7 +314,7 @@ export default function PeoplePage() {
             <div className="p-8 text-center text-xs text-[#535862]">Belum ada profil author atau reviewer.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[760px]">
                 <thead className="bg-[#f9fafb] text-[#535862] font-semibold border-b border-[#eaecf0]">
                   <tr>
                     <th className="px-6 py-3">Nama & Avatar</th>
@@ -1045,7 +1042,7 @@ export default function PeoplePage() {
                   Jika diisi, akun user CMS akan dibuat atau diperbarui otomatis agar persona ini bisa masuk ke CMS dashboard.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#f8fafc] p-4 rounded-xl border border-[#eaecf0]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-[#f8fafc] p-4 rounded-xl border border-[#eaecf0]">
                   <div className="space-y-1.5">
                     <label className="block text-xs font-semibold text-[#344054]">
                       Email Login
@@ -1070,21 +1067,6 @@ export default function PeoplePage() {
                       placeholder="••••••••"
                       className="w-full px-3.5 py-2 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                     />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-[#344054]">
-                      Hak Akses (Role)
-                    </label>
-                    <select
-                      value={userRole}
-                      onChange={(e) => setUserRole(e.target.value as any)}
-                      className="w-full px-3.5 py-2 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
-                    >
-                      <option value="AUTHOR">AUTHOR (Tulis & Edit Artikel)</option>
-                      <option value="EDITOR">EDITOR (Kelola Konten & Publikasi)</option>
-                      <option value="ADMIN">ADMIN (Akses Penuh CMS)</option>
-                    </select>
                   </div>
                 </div>
               </div>
