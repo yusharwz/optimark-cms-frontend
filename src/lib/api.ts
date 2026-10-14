@@ -51,6 +51,12 @@ export const api = {
 
   getMe: () => request<User>('/auth/me'),
 
+  changePassword: (oldPassword: string, newPassword: string) =>
+    request<{ success: boolean; message: string }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ oldPassword, newPassword }),
+    }),
+
   // Articles
   getArticles: (params?: {
     status?: string;

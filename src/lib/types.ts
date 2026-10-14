@@ -19,15 +19,39 @@ export interface Category {
   };
 }
 
+export interface ProfileItem {
+  title: string;
+  org: string;
+  period: string;
+  logo?: string;
+}
+
 export interface Person {
   id: string;
   name: string;
   slug: string;
   role: string;
+  roleId?: string | null;
+  roleEn?: string | null;
+  positionId?: string | null;
+  positionEn?: string | null;
   bio?: string | null;
+  bioId?: string | null;
+  bioEn?: string | null;
+  expertiseId?: string[];
+  expertiseEn?: string[];
+  experienceId?: ProfileItem[] | null;
+  experienceEn?: ProfileItem[] | null;
+  educationId?: ProfileItem[] | null;
+  educationEn?: ProfileItem[] | null;
   avatarUrl?: string | null;
   linkedinUrl?: string | null;
   type: PersonType;
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  } | null;
   _count?: {
     authoredArticles: number;
     reviewedArticles: number;

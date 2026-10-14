@@ -1,27 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   File06,
+  MessageSquare01,
   Folder,
   Users01,
   SwitchHorizontal01,
   Image03,
   Plus,
-  MessageSquare01,
   LogOut01,
+  Lock01,
 } from '@untitledui/icons';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { ChangePasswordModal } from '@/components/ChangePasswordModal';
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [pendingCount, setPendingCount] = useState<number>(0);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   useEffect(() => {
     api
@@ -159,16 +162,31 @@ export function Sidebar() {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={logout}
-            title="Keluar (Logout)"
-            className="p-1.5 rounded-lg text-[#717680] hover:text-red-600 hover:bg-red-50 transition shrink-0"
-          >
-            <LogOut01 className="size-4" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsChangePasswordOpen(true)}
+              title="Ganti Kata Sandi"
+              className="p-1.5 rounded-lg text-[#717680] hover:text-[#465984] hover:bg-[#f4f5f8] transition"
+            >
+              <Lock01 className="size-4" />
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              title="Keluar (Logout)"
+              className="p-1.5 rounded-lg text-[#717680] hover:text-red-600 hover:bg-red-50 transition"
+            >
+              <LogOut01 className="size-4" />
+            </button>
+          </div>
         </div>
       )}
+
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </aside>
   );
 }

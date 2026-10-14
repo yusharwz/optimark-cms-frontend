@@ -390,7 +390,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         };
       case 'ARCHIVED':
         return {
-          label: 'Arsipkan Artikel',
+          label: 'Tarik & Arsipkan Artikel',
           icon: Archive,
           className: 'bg-slate-700 hover:bg-slate-800 text-white shadow-xs',
         };
@@ -447,26 +447,26 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
               )}
             </div>
             <p className="text-xs text-[#535862] mt-0.5">
-              Kelola konten dwibahasa, validasi SEO publikasi, dan sinkronisasi instan ke landing page.
+              Atur konten, dwi-bahasa (ID & EN), metadata SEO, dan status publikasi.
             </p>
           </div>
         </div>
 
-        {/* Action Controls: Pratinjau + Status Dropdown + Dynamic Action Button */}
-        <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
-          {/* Full Web Preview Button */}
+        {/* Right Action Cluster */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Full Live Blog Preview Button */}
           <button
             type="button"
             onClick={() => setIsPreviewModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#465984] bg-[#f2f5f9] hover:bg-[#e2e8f2] rounded-lg transition-colors border border-[#c6d2e6]"
-            title="Buka Simulasi Halaman Blog Lengkap"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-[#d5d7da] bg-white text-[#344054] hover:bg-[#f8f9fa] shadow-2xs transition-colors"
+            title="Buka Pratinjau Tampilan Web Lengkap"
           >
-            <Eye className="size-4" />
+            <Eye className="size-4 text-[#465984]" />
             <span>Pratinjau Web Lengkap</span>
           </button>
 
-          {/* Status Dropdown immediately to the left of the dynamic action button */}
-          <div className="relative">
+          {/* Publication Status Selector Dropdown */}
+          <div className="flex items-center">
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value as PublishOption)}
@@ -474,18 +474,16 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
             >
               {isCurrentlyPublished ? (
                 <>
-                  <option value="PUBLISHED">PUBLISHED (Tayang Langsung)</option>
+                  <option value="PUBLISHED">PUBLISHED (Perbarui Langsung)</option>
                   <option value="DRAFT_REVISION">DRAFT (Simpan Revisi, Web Tetap Tayang)</option>
-                  <option value="DRAFT">DRAFT (Tarik dari Web / Sembunyikan)</option>
+                  <option value="ARCHIVED">ARCHIVED (Tarik dari Web / Sembunyikan)</option>
                   <option value="SCHEDULED">SCHEDULED (Jadwalkan)</option>
-                  <option value="ARCHIVED">ARCHIVED (Arsipkan)</option>
                 </>
               ) : (
                 <>
-                  <option value="DRAFT">DRAFT (Disembunyikan dari Web)</option>
+                  <option value="DRAFT">DRAFT (Simpan Draf)</option>
                   <option value="PUBLISHED">PUBLISHED (Tayang Sekarang)</option>
                   <option value="SCHEDULED">SCHEDULED (Jadwalkan)</option>
-                  <option value="ARCHIVED">ARCHIVED (Arsipkan)</option>
                 </>
               )}
             </select>

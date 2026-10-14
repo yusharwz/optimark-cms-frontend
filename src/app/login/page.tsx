@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { Lock01, Mail01, AlertCircle } from '@untitledui/icons';
 
@@ -29,9 +30,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[#f8fafc] flex flex-col justify-center items-center p-4 selection:bg-[#465984] selection:text-white">
       <div className="w-full max-w-md bg-white rounded-2xl border border-[#eaecf0] shadow-sm p-8 space-y-6">
         <div className="text-center space-y-2">
-          <div className="size-12 rounded-xl bg-[#465984] text-white flex items-center justify-center mx-auto shadow-xs font-bold text-xl">
-            O
-          </div>
+          <Image
+            src="/assets/optimark-logo.svg"
+            alt="Optimark Logo"
+            width={44}
+            height={44}
+            className="mx-auto shrink-0 mb-1"
+          />
           <h1 className="text-2xl font-bold text-[#181d27] tracking-tight">
             OPTIMARK CMS
           </h1>
@@ -90,10 +95,6 @@ export default function LoginPage() {
             {loading ? 'Memproses Otentikasi...' : 'Masuk ke Dashboard'}
           </button>
         </form>
-
-        <div className="pt-2 border-t border-[#eaecf0] text-center text-[11px] text-[#717680]">
-          Dilindungi oleh sistem otentikasi JWT & enkripsi kata sandi bcrypt.
-        </div>
       </div>
     </div>
   );
