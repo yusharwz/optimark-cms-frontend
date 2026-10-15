@@ -242,6 +242,7 @@ export const api = {
     // 1. Request presigned URL from backend to upload direct to R2 (no BE load)
     try {
       const mimeType = processedFile.type || 'image/webp';
+      const cleanAlt = (altText || processedFile.name.replace(/\.[^/.]+$/, '')).trim();
       const presigned = await request<{
         uploadUrl: string;
         fileUrl: string;
@@ -255,7 +256,7 @@ export const api = {
           filename: processedFile.name,
           mimeType,
           size: processedFile.size,
-          altText,
+          altText: cleanAlt,
         }),
       });
 
@@ -281,7 +282,7 @@ export const api = {
           filename: presigned.filename,
           mimeType: presigned.mimeType,
           size: processedFile.size,
-          altText: presigned.altText,
+          altText: presigned.altText || cleanAlt,
         }),
       });
     } catch (presignedErr) {
@@ -289,11 +290,16 @@ export const api = {
       // Fallback: direct multipart upload to backend
       const formData = new FormData();
       formData.append('file', processedFile);
-      if (altText) formData.append('altText', altText);
+      if (altText) formData.append('altText', altText.trim());
       formData.append('convertToWebp', convertToWebp ? 'true' : 'false');
+
+      const token = typeof window !== 'undefined' ? localStorage.getItem('optimark_cms_token') : null;
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const res = await fetch(`${getApiBase()}/media/upload`, {
         method: 'POST',
+        headers,
         body: formData,
       });
 

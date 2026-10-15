@@ -13,107 +13,104 @@ interface RichTextEditorProps {
   minHeight?: string;
 }
 
-// Convert Markdown to visual HTML for contentEditable
-function markdownToHtml(md: string): string {
-  if (!md) return '<p><br></p>';
+function createFigureHtml(src: string, alt: string): string {
+  const cleanAlt = alt || '';
+  const displayAlt = cleanAlt || 'Tambahkan alt text gambar...';
+  return (
+    `<figure class="editor-figure group relative my-4 rounded-xl border border-transparent hover:border-[#465984]/30 p-2 text-center transition-all" data-src="${src}" data-alt="${cleanAlt}">` +
+      `<div contenteditable="false" class="editor-figure-actions absolute top-3 right-3 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition z-10 select-none">` +
+        `<button type="button" data-action="edit-alt" class="px-2 py-1 rounded bg-[#181d27]/85 hover:bg-[#181d27] text-white text-[11px] font-semibold backdrop-blur-xs cursor-pointer shadow-xs transition" title="Ubah Alt Text">Alt Text</button>` +
+        `<button type="button" data-action="delete-figure" class="px-2 py-1 rounded bg-red-600/85 hover:bg-red-700 text-white text-[11px] font-semibold backdrop-blur-xs cursor-pointer shadow-xs transition" title="Hapus Gambar dari Artikel">Hapus</button>` +
+      `</div>` +
+      `<img src="${src}" alt="${cleanAlt}" class="rounded-lg max-w-full mx-auto" />` +
+      `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${displayAlt}</figcaption>` +
+    `</figure>`
+  );
+}
 
-  const lines = md.split('\n');
+// Convert Markdown to visual HTML for contentEditable
+function markdownToHtml(markdown: string): string {
+  if (!markdown) return '<p><br></p>';
+
+  const lines = markdown.split('\n');
   const htmlParts: string[] = [];
   let inUl = false;
   let inOl = false;
 
-  for (let i = 0; i < lines.length; i++) {
-    const rawLine = lines[i];
-    const line = rawLine.trim();
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
 
-    if (line.startsWith('- ') || line.startsWith('* ')) {
-      if (inOl) {
-        htmlParts.push('</ol>');
-        inOl = false;
-      }
-      if (!inUl) {
-        htmlParts.push('<ul>');
-        inUl = true;
-      }
-      const itemText = formatInline(line.substring(2));
-      htmlParts.push(`<li>${itemText}</li>`);
-      continue;
-    } else if (/^\d+\.\s+/.test(line)) {
-      if (inUl) {
+      if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+        if (!inUl) {
+          if (inOl) { htmlParts.push('</ol>'); inOl = false; }
+          htmlParts.push('<ul>');
+          inUl = true;
+        }
+        htmlParts.push(`<li>${formatInline(trimmed.substring(2))}</li>`);
+        continue;
+      } else if (inUl) {
         htmlParts.push('</ul>');
         inUl = false;
       }
-      if (!inOl) {
-        htmlParts.push('<ol>');
-        inOl = true;
-      }
-      const itemText = formatInline(line.replace(/^\d+\.\s+/, ''));
-      htmlParts.push(`<li>${itemText}</li>`);
-      continue;
-    } else {
-      if (inUl) {
-        htmlParts.push('</ul>');
-        inUl = false;
-      }
-      if (inOl) {
+
+      if (/^\d+\.\s/.test(trimmed)) {
+        if (!inOl) {
+          if (inUl) { htmlParts.push('</ul>'); inUl = false; }
+          htmlParts.push('<ol>');
+          inOl = true;
+        }
+        const text = trimmed.replace(/^\d+\.\s/, '');
+        htmlParts.push(`<li>${formatInline(text)}</li>`);
+        continue;
+      } else if (inOl) {
         htmlParts.push('</ol>');
         inOl = false;
       }
-    }
 
-    if (!line) {
-      continue;
-    }
-
-    if (line.startsWith('![')) {
-      const match = line.match(/^!\[(.*?)\]\((.*?)\)/);
-      if (match) {
-        const alt = match[1] || '';
-        const src = match[2] || '';
-        htmlParts.push(
-          `<figure class="editor-figure my-4 text-center select-none" data-src="${src}" data-alt="${alt}">` +
-            `<img src="${src}" alt="${alt}" class="rounded-xl max-w-full mx-auto" />` +
-            `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${alt || 'Tambahkan alt text gambar...'}</figcaption>` +
-          `</figure>`
-        );
+      if (!trimmed) {
         continue;
       }
+
+      if (line.startsWith('![')) {
+        const match = line.match(/^!\[(.*?)\]\((.*?)\)/);
+        if (match) {
+          const alt = match[1] || '';
+          const src = match[2] || '';
+          htmlParts.push(createFigureHtml(src, alt));
+          continue;
+        }
+      }
+
+      if (line.startsWith('### ')) {
+        htmlParts.push(`<h3>${formatInline(line.substring(4))}</h3>`);
+      } else if (line.startsWith('## ')) {
+        htmlParts.push(`<h2>${formatInline(line.substring(3))}</h2>`);
+      } else if (line.startsWith('# ')) {
+        htmlParts.push(`<h1>${formatInline(line.substring(2))}</h1>`);
+      } else if (line.startsWith('> ')) {
+        htmlParts.push(`<blockquote>${formatInline(line.substring(2))}</blockquote>`);
+      } else {
+        htmlParts.push(`<p>${formatInline(line)}</p>`);
+      }
     }
 
-    if (line.startsWith('### ')) {
-      htmlParts.push(`<h3>${formatInline(line.substring(4))}</h3>`);
-    } else if (line.startsWith('## ')) {
-      htmlParts.push(`<h2>${formatInline(line.substring(3))}</h2>`);
-    } else if (line.startsWith('# ')) {
-      htmlParts.push(`<h1>${formatInline(line.substring(2))}</h1>`);
-    } else if (line.startsWith('> ')) {
-      htmlParts.push(`<blockquote>${formatInline(line.substring(2))}</blockquote>`);
-    } else {
-      htmlParts.push(`<p>${formatInline(line)}</p>`);
-    }
+    if (inUl) htmlParts.push('</ul>');
+    if (inOl) htmlParts.push('</ol>');
+
+    return htmlParts.join('') || '<p><br></p>';
   }
 
-  if (inUl) htmlParts.push('</ul>');
-  if (inOl) htmlParts.push('</ol>');
-
-  return htmlParts.join('') || '<p><br></p>';
-}
-
-function formatInline(text: string): string {
-  return text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/~~(.*?)~~/g, '<del>$1</del>')
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-    .replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
-      return (
-        `<figure class="editor-figure my-4 text-center select-none" data-src="${src}" data-alt="${alt}">` +
-          `<img src="${src}" alt="${alt}" class="rounded-xl max-w-full mx-auto" />` +
-          `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${alt || 'Tambahkan alt text gambar...'}</figcaption>` +
-        `</figure>`
-      );
-    });
-}
+  function formatInline(text: string): string {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/~~(.*?)~~/g, '<del>$1</del>')
+      .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
+      .replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
+        return createFigureHtml(src, alt);
+      });
+  }
 
 // Convert visual HTML from contentEditable back to clean Markdown
 function htmlToMarkdown(element: HTMLElement): string {
@@ -137,6 +134,9 @@ function htmlToMarkdown(element: HTMLElement): string {
           res += child.textContent;
         } else if (child.nodeType === Node.ELEMENT_NODE) {
           const cEl = child as HTMLElement;
+          if (cEl.classList.contains('editor-figure-actions') || cEl.getAttribute('data-action')) {
+            return;
+          }
           const cTag = cEl.tagName.toLowerCase();
           if (cTag === 'strong' || cTag === 'b') {
             res += `**${inlineContent(cEl)}**`;
@@ -149,19 +149,19 @@ function htmlToMarkdown(element: HTMLElement): string {
           } else if (cTag === 'a') {
             const href = cEl.getAttribute('href') || '#';
             res += `[${inlineContent(cEl)}](${href})`;
-          } else if (cTag === 'figure') {
+          } else if (cTag === 'figure' || cEl.classList.contains('editor-figure')) {
             const img = cEl.querySelector('img');
             const figcaption = cEl.querySelector('figcaption');
             if (img) {
               const src = img.getAttribute('src') || cEl.getAttribute('data-src') || '';
-              let alt = figcaption?.textContent?.trim() || img.getAttribute('alt') || cEl.getAttribute('data-alt') || '';
+              let alt = cEl.getAttribute('data-alt') || figcaption?.textContent?.trim() || img.getAttribute('alt') || '';
               if (alt === 'Tambahkan alt text gambar...') alt = '';
-              res += `\n\n![${alt}](${src})\n\n`;
+              if (src) res += `\n\n![${alt}](${src})\n\n`;
             }
           } else if (cTag === 'img') {
             const src = cEl.getAttribute('src') || '';
             const alt = cEl.getAttribute('alt') || '';
-            res += `\n\n![${alt}](${src})\n\n`;
+            if (src) res += `\n\n![${alt}](${src})\n\n`;
           } else if (cTag === 'br') {
             res += '\n';
           } else {
@@ -172,20 +172,20 @@ function htmlToMarkdown(element: HTMLElement): string {
       return res;
     };
 
-    if (tag === 'figure') {
+    if (tag === 'figure' || el.classList.contains('editor-figure')) {
       const img = el.querySelector('img');
       const figcaption = el.querySelector('figcaption');
       if (img) {
         const src = img.getAttribute('src') || el.getAttribute('data-src') || '';
-        let alt = figcaption?.textContent?.trim() || img.getAttribute('alt') || el.getAttribute('data-alt') || '';
+        let alt = el.getAttribute('data-alt') || figcaption?.textContent?.trim() || img.getAttribute('alt') || '';
         if (alt === 'Tambahkan alt text gambar...') alt = '';
-        parts.push(`![${alt}](${src})`);
+        if (src) parts.push(`![${alt}](${src})`);
         return;
       }
     } else if (tag === 'img') {
       const src = el.getAttribute('src') || '';
       const alt = el.getAttribute('alt') || '';
-      parts.push(`![${alt}](${src})`);
+      if (src) parts.push(`![${alt}](${src})`);
       return;
     } else if (tag === 'h1') {
       parts.push(`# ${inlineContent(el)}`);
@@ -200,14 +200,10 @@ function htmlToMarkdown(element: HTMLElement): string {
         parts.push(`- ${inlineContent(li)}`);
       });
     } else if (tag === 'ol') {
-      let idx = 1;
-      el.querySelectorAll('li').forEach((li) => {
-        parts.push(`${idx++}. ${inlineContent(li)}`);
+      el.querySelectorAll('li').forEach((li, idx) => {
+        parts.push(`${idx + 1}. ${inlineContent(li)}`);
       });
     } else if (tag === 'p' || tag === 'div') {
-      const text = inlineContent(el).trim();
-      if (text) parts.push(text);
-    } else {
       const text = inlineContent(el).trim();
       if (text) parts.push(text);
     }
@@ -321,15 +317,11 @@ export function RichTextEditor({
 
     setUploadingImage(true);
     try {
+      const cleanAlt = userAlt.trim() || defaultAlt;
       const targetSlug = file.name.replace(/\.[^/.]+$/, '');
-      const media = await api.uploadMedia(file, file.name, true, targetSlug);
-      const altText = userAlt.trim() || defaultAlt;
+      const media = await api.uploadMedia(file, cleanAlt, true, targetSlug);
 
-      const figureHtml =
-        `<figure class="editor-figure my-4 text-center select-none" data-src="${media.url}" data-alt="${altText}">` +
-          `<img src="${media.url}" alt="${altText}" class="rounded-xl max-w-full mx-auto" />` +
-          `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${altText}</figcaption>` +
-        `</figure><p><br></p>`;
+      const figureHtml = createFigureHtml(media.url, cleanAlt) + '<p><br></p>';
 
       if (editorRef.current) {
         editorRef.current.focus();
@@ -351,25 +343,47 @@ export function RichTextEditor({
 
   const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (target.tagName.toLowerCase() === 'img') {
-      const fig = target.closest('figure');
-      const figcaption = fig?.querySelector('figcaption');
-      const currentAlt = figcaption?.textContent?.trim() || target.getAttribute('alt') || '';
-      const newAlt = window.prompt(
-        'Ubah Alt Text Gambar (SEO Image Alt Tag):',
-        currentAlt === 'Tambahkan alt text gambar...' ? '' : currentAlt
-      );
+
+    // 1. Delete Figure Action
+    const deleteBtn = target.closest('[data-action="delete-figure"]');
+    if (deleteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const figure = deleteBtn.closest('.editor-figure');
+      if (figure && window.confirm('Hapus gambar ini dari artikel?')) {
+        figure.remove();
+        handleInput();
+      }
+      return;
+    }
+
+    // 2. Edit Alt Text Action
+    const editAltBtn = target.closest('[data-action="edit-alt"]');
+    const isImg = target.tagName.toLowerCase() === 'img';
+    if (editAltBtn || isImg) {
+      e.preventDefault();
+      e.stopPropagation();
+      const figure = (editAltBtn || target).closest('.editor-figure') as HTMLElement | null;
+      if (!figure) return;
+      const img = figure.querySelector('img');
+      const figcaption = figure.querySelector('figcaption');
+      const currentAlt =
+        figure.getAttribute('data-alt') ||
+        figcaption?.textContent?.trim() ||
+        img?.getAttribute('alt') ||
+        '';
+      const cleanCurrent = currentAlt === 'Tambahkan alt text gambar...' ? '' : currentAlt;
+      const newAlt = window.prompt('Ubah Alt Text Gambar (SEO Image Alt Tag):', cleanCurrent);
       if (newAlt !== null) {
         const cleanAlt = newAlt.trim();
-        target.setAttribute('alt', cleanAlt);
+        if (img) img.setAttribute('alt', cleanAlt);
         if (figcaption) {
           figcaption.textContent = cleanAlt || 'Tambahkan alt text gambar...';
         }
-        if (fig) {
-          fig.setAttribute('data-alt', cleanAlt);
-        }
+        figure.setAttribute('data-alt', cleanAlt);
         handleInput();
       }
+      return;
     }
   };
 
@@ -383,8 +397,8 @@ export function RichTextEditor({
         className="hidden"
       />
 
-      {/* Sticky Visual Toolbar */}
-      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 p-2 bg-[#f8fafc]/95 backdrop-blur-xs rounded-t-xl border-b border-[#eaecf0] text-sm text-[#334155] select-none shadow-xs">
+      {/* Sticky Visual Toolbar - stays pinned under the page header when scrolling */}
+      <div className="sticky top-[53px] lg:top-16 z-30 flex flex-wrap items-center gap-1 p-2 bg-white/95 backdrop-blur-md rounded-t-xl border-b border-[#eaecf0] text-sm text-[#334155] select-none shadow-xs">
         {/* Headings & Paragraph Selector */}
         <div className="flex items-center gap-0.5">
           <button
