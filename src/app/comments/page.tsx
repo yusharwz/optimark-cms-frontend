@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { Header } from '@/components/Header';
-import { api } from '@/lib/api';
+import { api, getLandingUrl } from '@/lib/api';
 import { CommentItem, CommentStatus, CommentStats } from '@/lib/types';
 import {
   MessageSquare01,
@@ -19,6 +19,7 @@ import {
   Globe01,
   File06,
 } from '@untitledui/icons';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function CommentsPage() {
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -34,6 +35,8 @@ export default function CommentsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -127,6 +130,9 @@ export default function CommentsPage() {
     }
   };
 
+  const totalPages = Math.ceil(comments.length / limit) || 1;
+  const paginatedComments = comments.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="flex-1 min-h-screen bg-[#f8fafc]">
       <Header
@@ -134,11 +140,14 @@ export default function CommentsPage() {
         description="Kelola, setujui, tolak, atau tandai spam kiriman komentar pembaca dari landing page."
       />
 
-      <div className="p-8 max-w-7xl mx-auto space-y-6">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full flex-1">
         {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div
-            onClick={() => setStatusFilter('ALL')}
+            onClick={() => {
+              setStatusFilter('ALL');
+              setPage(1);
+            }}
             className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
               statusFilter === 'ALL'
                 ? 'border-[#465984] ring-2 ring-[#465984]/10 shadow-sm'
@@ -158,7 +167,10 @@ export default function CommentsPage() {
           </div>
 
           <div
-            onClick={() => setStatusFilter('PENDING')}
+            onClick={() => {
+              setStatusFilter('PENDING');
+              setPage(1);
+            }}
             className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
               statusFilter === 'PENDING'
                 ? 'border-[#f79009] ring-2 ring-[#f79009]/10 shadow-sm'
@@ -182,7 +194,10 @@ export default function CommentsPage() {
           </div>
 
           <div
-            onClick={() => setStatusFilter('APPROVED')}
+            onClick={() => {
+              setStatusFilter('APPROVED');
+              setPage(1);
+            }}
             className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
               statusFilter === 'APPROVED'
                 ? 'border-[#12b76a] ring-2 ring-[#12b76a]/10 shadow-sm'
@@ -191,7 +206,7 @@ export default function CommentsPage() {
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-[#027a48] uppercase tracking-wider">
-                Disetujui & Tampil
+                Disetujui
               </span>
               <CheckCircle className="size-4 text-[#12b76a]" />
             </div>
@@ -202,7 +217,10 @@ export default function CommentsPage() {
           </div>
 
           <div
-            onClick={() => setStatusFilter('SPAM')}
+            onClick={() => {
+              setStatusFilter('SPAM');
+              setPage(1);
+            }}
             className={`p-5 bg-white rounded-xl border transition-all cursor-pointer ${
               statusFilter === 'SPAM'
                 ? 'border-[#f04438] ring-2 ring-[#f04438]/10 shadow-sm'
@@ -234,7 +252,10 @@ export default function CommentsPage() {
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setStatusFilter(tab.id)}
+                onClick={() => {
+                  setStatusFilter(tab.id);
+                  setPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
                   statusFilter === tab.id
                     ? 'bg-[#465984] text-white'
@@ -259,10 +280,13 @@ export default function CommentsPage() {
             <SearchLg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#717680]" />
             <input
               type="text"
-              placeholder="Cari nama, email, isi..."
+              placeholder="Cari komentar, nama, email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-[#d0d5dd] rounded-lg text-xs focus:ring-2 focus:ring-[#465984] focus:border-[#465984] outline-none"
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-full"
             />
           </div>
         </div>
@@ -285,11 +309,11 @@ export default function CommentsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className="bg-white rounded-xl border border-[#eaecf0] p-5 shadow-xs hover:border-[#d0d5dd] transition-all space-y-3"
-              >
+            {paginatedComments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="bg-white rounded-xl border border-[#eaecf0] p-5 shadow-xs hover:border-[#d0d5dd] transition-all space-y-3"
+                >
                 {/* Header row: Author info & Status badge */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f2f4f7]">
                   <div className="flex items-center gap-3">
@@ -341,7 +365,7 @@ export default function CommentsPage() {
                     </span>
                   </div>
                   <a
-                    href={`https://optimark.ai/blog/${comment.slug}`}
+                    href={getLandingUrl(`/blog/${comment.slug}`)}
                     target="_blank"
                     rel="noreferrer"
                     className="text-[#465984] hover:underline shrink-0 flex items-center gap-1 font-medium"
@@ -408,6 +432,16 @@ export default function CommentsPage() {
                 </div>
               </div>
             ))}
+
+            <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
+              <TablePagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={comments.length}
+                itemsPerPage={limit}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         )}
       </div>

@@ -4,14 +4,18 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { MediaItem } from '@/lib/types';
-import { Upload01, Copy01, Check, Edit01, Image03 } from '@untitledui/icons';
+import { Upload01, Copy01, Check, Edit01, Image03, SearchLg } from '@untitledui/icons';
 import { formatDate } from '@/lib/utils';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function MediaPage() {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 12;
 
   // Edit Alt Text state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -64,6 +68,19 @@ export default function MediaPage() {
     }
   };
 
+  const filteredMedia = media.filter((m) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (m.filename && m.filename.toLowerCase().includes(q)) ||
+      (m.altText && m.altText.toLowerCase().includes(q)) ||
+      (m.url && m.url.toLowerCase().includes(q))
+    );
+  });
+
+  const totalPages = Math.ceil(filteredMedia.length / limit) || 1;
+  const paginatedMedia = filteredMedia.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
@@ -75,7 +92,7 @@ export default function MediaPage() {
             <span>{uploading ? 'Mengunggah...' : 'Upload Gambar Baru'}</span>
             <input
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
               onChange={handleUpload}
               disabled={uploading}
               className="hidden"
@@ -84,20 +101,42 @@ export default function MediaPage() {
         }
       />
 
-      <div className="p-4 sm:p-8 space-y-6 max-w-7xl">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full flex-1">
+        {/* Search & Filter Bar */}
+        <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="text-xs text-[#535862] font-medium">
+            Total <span className="font-semibold text-[#181d27]">{filteredMedia.length}</span> Berkas Gambar di Cloudflare R2
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <SearchLg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#717680]" />
+            <input
+              type="text"
+              placeholder="Cari nama file atau alt text..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-full"
+            />
+          </div>
+        </div>
+
         {loading ? (
           <div className="py-12 text-center text-[#717680] text-xs">
             Memuat aset media dari Cloudflare R2...
           </div>
-        ) : media.length === 0 ? (
+        ) : filteredMedia.length === 0 ? (
           <div className="py-16 text-center text-[#717680] bg-white rounded-2xl border border-[#eaecf0] shadow-xs">
             <Image03 className="size-10 mx-auto mb-3 text-[#d5d7da]" />
-            <p className="font-semibold text-[#181d27]">Belum ada aset gambar tersimpan</p>
-            <p className="text-xs text-[#717680] mt-1">Upload gambar untuk digunakan dalam artikel SEO Anda.</p>
+            <p className="font-semibold text-[#181d27]">{search ? 'Tidak ada gambar yang cocok dengan pencarian' : 'Belum ada aset gambar tersimpan'}</p>
+            <p className="text-xs text-[#717680] mt-1">{search ? 'Coba gunakan kata kunci nama berkas atau deskripsi lainnya.' : 'Upload gambar untuk digunakan dalam artikel SEO Anda.'}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {media.map((item) => (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {paginatedMedia.map((item) => (
               <div
                 key={item.id}
                 className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden flex flex-col"
@@ -186,6 +225,17 @@ export default function MediaPage() {
                 </div>
               </div>
             ))}
+            </div>
+
+            <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
+              <TablePagination
+                currentPage={page}
+                totalPages={totalPages}
+                totalItems={filteredMedia.length}
+                itemsPerPage={limit}
+                onPageChange={setPage}
+              />
+            </div>
           </div>
         )}
       </div>

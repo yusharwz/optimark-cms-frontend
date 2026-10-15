@@ -880,7 +880,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                     <span>Pilih file gambar</span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                       onChange={handleImageUpload}
                       disabled={uploadingImage}
                       className="sr-only"
@@ -888,7 +888,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                   </label>{' '}
                   atau seret ke sini
                 </div>
-                <p className="text-[11px] text-[#717680]">Storage Cloudflare R2 staging • Hingga 10MB</p>
+                <p className="text-[11px] text-[#717680]">Storage Cloudflare R2 • Otomatis WebP &amp; Max 5MB</p>
                 {uploadingImage && (
                   <p className="text-xs text-[#465984] font-medium animate-pulse">
                     Mengunggah ke Cloudflare R2...

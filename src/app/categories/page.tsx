@@ -4,11 +4,15 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { Category } from '@/lib/types';
-import { Plus, Trash01, Edit01, XClose, Globe01 } from '@untitledui/icons';
+import { Plus, Trash01, Edit01, XClose, Globe01, SearchLg } from '@untitledui/icons';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Modal form state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -143,6 +147,23 @@ export default function CategoriesPage() {
     }
   };
 
+  const filteredCategories = categories.filter((cat) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      (cat.name && cat.name.toLowerCase().includes(q)) ||
+      (cat.nameId && cat.nameId.toLowerCase().includes(q)) ||
+      (cat.nameEn && cat.nameEn.toLowerCase().includes(q)) ||
+      (cat.slug && cat.slug.toLowerCase().includes(q)) ||
+      (cat.description && cat.description.toLowerCase().includes(q)) ||
+      (cat.descriptionId && cat.descriptionId.toLowerCase().includes(q)) ||
+      (cat.descriptionEn && cat.descriptionEn.toLowerCase().includes(q))
+    );
+  });
+
+  const totalPages = Math.ceil(filteredCategories.length / limit) || 1;
+  const paginatedCategories = filteredCategories.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
@@ -160,10 +181,31 @@ export default function CategoriesPage() {
         }
       />
 
-      <div className="p-4 sm:p-8 space-y-6 max-w-6xl">
-        <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full flex-1">
+        {/* Search & Filter Bar */}
+        <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="text-xs text-[#535862] font-medium">
+            Total <span className="font-semibold text-[#181d27]">{filteredCategories.length}</span> Kategori Terdaftar
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <SearchLg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#717680]" />
+            <input
+              type="text"
+              placeholder="Cari kategori atau slug..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-full"
+            />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border border-[#eaecf0] shadow-xs overflow-hidden w-full">
           <div className="overflow-x-auto w-full">
-            <table className="w-full text-left text-xs border-collapse min-w-[680px]">
+            <table className="w-full text-left text-xs border-collapse min-w-[760px]">
             <thead>
               <tr className="bg-[#fafafa] border-b border-[#eaecf0] text-[#717680] font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Nama Topik (ID / EN)</th>
@@ -180,14 +222,14 @@ export default function CategoriesPage() {
                     Memuat daftar kategori...
                   </td>
                 </tr>
-              ) : categories.length === 0 ? (
+              ) : filteredCategories.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-10 text-center text-[#717680]">
-                    Belum ada kategori yang terdaftar.
+                    {search ? 'Tidak ada kategori yang cocok dengan pencarian.' : 'Belum ada kategori yang terdaftar.'}
                   </td>
                 </tr>
               ) : (
-                categories.map((cat) => (
+                paginatedCategories.map((cat) => (
                   <tr key={cat.id} className="hover:bg-[#f9fafb] transition-colors">
                     <td className="py-3.5 px-4">
                       <div className="space-y-0.5">
@@ -251,6 +293,14 @@ export default function CategoriesPage() {
             </tbody>
           </table>
           </div>
+
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filteredCategories.length}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+          />
         </div>
       </div>
 

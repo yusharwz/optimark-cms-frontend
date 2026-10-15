@@ -15,11 +15,17 @@ import {
   Lock01,
   Mail01,
   Globe01,
+  SearchLg,
 } from '@untitledui/icons';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function PeoplePage() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterType, setFilterType] = useState<'ALL' | PersonType>('ALL');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Form Modal State
   const [isAdding, setIsAdding] = useState(false);
@@ -280,6 +286,24 @@ export default function PeoplePage() {
     else setEducationEn(educationEn.filter((_, i) => i !== index));
   };
 
+  const filteredPeople = people.filter((p) => {
+    const matchesType = filterType === 'ALL' || p.type === filterType;
+    if (!matchesType) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.slug.toLowerCase().includes(q) ||
+      (p.role && p.role.toLowerCase().includes(q)) ||
+      (p.roleId && p.roleId.toLowerCase().includes(q)) ||
+      (p.roleEn && p.roleEn.toLowerCase().includes(q)) ||
+      (p.user?.email && p.user.email.toLowerCase().includes(q))
+    );
+  });
+
+  const totalPages = Math.ceil(filteredPeople.length / limit) || 1;
+  const paginatedPeople = filteredPeople.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="flex-1 flex flex-col min-w-0 bg-[#fdfdfd]">
       <Header
@@ -300,33 +324,107 @@ export default function PeoplePage() {
         }
       />
 
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
-        {/* Table / List */}
-        <div className="bg-white border border-[#eaecf0] rounded-xl shadow-xs overflow-hidden">
-          <div className="px-6 py-4 border-b border-[#eaecf0] flex items-center justify-between">
-            <h3 className="text-sm font-bold text-[#181d27]">Daftar Profil Penulis & Reviewer</h3>
-            <span className="text-xs text-[#535862]">{people.length} Orang Terdaftar</span>
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full flex-1">
+        {/* Filter and Search Bar */}
+        <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+            <button
+              type="button"
+              onClick={() => {
+                setFilterType('ALL');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterType === 'ALL'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Semua ({people.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterType('AUTHOR');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterType === 'AUTHOR'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Author ({people.filter((p) => p.type === 'AUTHOR').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterType('REVIEWER');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterType === 'REVIEWER'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Reviewer ({people.filter((p) => p.type === 'REVIEWER').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterType('BOTH');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterType === 'BOTH'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Keduanya ({people.filter((p) => p.type === 'BOTH').length})
+            </button>
           </div>
 
+          <div className="relative w-full md:w-72">
+            <SearchLg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#717680]" />
+            <input
+              type="text"
+              placeholder="Cari nama, role, slug..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-full"
+            />
+          </div>
+        </div>
+
+        {/* Table / List */}
+        <div className="bg-white border border-[#eaecf0] rounded-xl shadow-xs overflow-hidden w-full">
           {loading ? (
             <div className="p-8 text-center text-xs text-[#535862]">Memuat data profil...</div>
-          ) : people.length === 0 ? (
-            <div className="p-8 text-center text-xs text-[#535862]">Belum ada profil author atau reviewer.</div>
+          ) : filteredPeople.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[#535862]">
+              {search ? 'Tidak ada profil yang cocok dengan pencarian.' : 'Belum ada profil author atau reviewer.'}
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs min-w-[760px]">
-                <thead className="bg-[#f9fafb] text-[#535862] font-semibold border-b border-[#eaecf0]">
-                  <tr>
-                    <th className="px-6 py-3">Nama & Avatar</th>
-                    <th className="px-6 py-3">Role / Posisi (ID & EN)</th>
-                    <th className="px-6 py-3">Tipe E-E-A-T</th>
-                    <th className="px-6 py-3">Akun Kredensial CMS</th>
-                    <th className="px-6 py-3">Statistik Artikel</th>
-                    <th className="px-6 py-3 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#eaecf0] text-[#181d27]">
-                  {people.map((p) => (
+            <>
+              <div className="overflow-x-auto w-full">
+                <table className="w-full text-left text-xs min-w-[760px]">
+                  <thead className="bg-[#f9fafb] text-[#535862] font-semibold border-b border-[#eaecf0]">
+                    <tr>
+                      <th className="px-6 py-3">Nama & Avatar</th>
+                      <th className="px-6 py-3">Role / Posisi (ID & EN)</th>
+                      <th className="px-6 py-3">Tipe E-E-A-T</th>
+                      <th className="px-6 py-3">Akun Kredensial CMS</th>
+                      <th className="px-6 py-3">Statistik Artikel</th>
+                      <th className="px-6 py-3 text-right">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#eaecf0] text-[#181d27]">
+                    {paginatedPeople.map((p) => (
                     <tr key={p.id} className="hover:bg-[#f9fafb]/60 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -409,9 +507,18 @@ export default function PeoplePage() {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
-      </main>
+
+            <TablePagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={filteredPeople.length}
+              itemsPerPage={limit}
+              onPageChange={setPage}
+            />
+          </>
+        )}
+      </div>
+    </div>
 
       {/* Modal Form Tambah / Edit */}
       {isAdding && (
@@ -532,7 +639,7 @@ export default function PeoplePage() {
                         <span>{uploadingAvatar ? 'Mengunggah ke R2...' : 'Upload Gambar Baru ke R2'}</span>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                           className="hidden"
                           onChange={handleAvatarUpload}
                           disabled={uploadingAvatar}
@@ -666,7 +773,7 @@ export default function PeoplePage() {
                               <span className="hidden sm:inline">{item.logo ? 'Ganti' : 'Logo'}</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                 className="hidden"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
@@ -752,7 +859,7 @@ export default function PeoplePage() {
                               <span className="hidden sm:inline">{item.logo ? 'Ganti' : 'Logo'}</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                 className="hidden"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
@@ -894,7 +1001,7 @@ export default function PeoplePage() {
                               <span className="hidden sm:inline">{item.logo ? 'Change' : 'Logo'}</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                 className="hidden"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];
@@ -980,7 +1087,7 @@ export default function PeoplePage() {
                               <span className="hidden sm:inline">{item.logo ? 'Change' : 'Logo'}</span>
                               <input
                                 type="file"
-                                accept="image/*"
+                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                 className="hidden"
                                 onChange={async (e) => {
                                   const file = e.target.files?.[0];

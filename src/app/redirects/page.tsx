@@ -13,12 +13,18 @@ import {
   XClose,
   ArrowRight,
   InfoCircle,
+  SearchLg,
 } from '@untitledui/icons';
 import { formatDate } from '@/lib/utils';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function RedirectsPage() {
   const [redirects, setRedirects] = useState<RedirectItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const limit = 10;
 
   // Form State
   const [isAdding, setIsAdding] = useState(false);
@@ -112,11 +118,26 @@ export default function RedirectsPage() {
     }
   };
 
+  const filteredRedirects = redirects.filter((r) => {
+    if (filterStatus === 'ACTIVE' && !r.active) return false;
+    if (filterStatus === 'INACTIVE' && r.active) return false;
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      r.sourcePath.toLowerCase().includes(q) ||
+      r.targetPath.toLowerCase().includes(q) ||
+      (r.description && r.description.toLowerCase().includes(q))
+    );
+  });
+
+  const totalPages = Math.ceil(filteredRedirects.length / limit) || 1;
+  const paginatedRedirects = filteredRedirects.slice((page - 1) * limit, page * limit);
+
   return (
     <div className="flex-1 flex flex-col min-h-screen bg-[#f8fafc]">
       <Header
-        title="301 Redirect Management"
-        description="Kelola pengalihan URL permanen (301) agar link equity, backlink, dan organic ranking tidak hilang saat URL artikel berubah."
+        title="301 / 302 Redirect Manager"
+        description="Kelola pengalihan URL dinamis untuk menjaga integritas link juice dan mencegah error 404 pada Google Organic Search."
         actions={
           <button
             type="button"
@@ -132,12 +153,74 @@ export default function RedirectsPage() {
         }
       />
 
-      <div className="p-4 sm:p-8 space-y-6 max-w-5xl">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full flex-1">
         {/* SEO Tip Card */}
         <div className="p-4 rounded-xl border border-[#c6d2e6] bg-[#f2f5f9] text-[#1e273b] text-xs flex items-start gap-3 shadow-xs">
           <InfoCircle className="size-4 text-[#465984] shrink-0 mt-0.5" />
           <div className="leading-relaxed">
             <span className="font-semibold text-[#181d27]">Otomatisasi 301:</span> Ketika Anda mengubah slug artikel di CMS, sistem backend otomatis membuat aturan 301 dari URL lama ke URL baru. Halaman ini digunakan untuk memantau atau menambahkan redirect kustom tambahan (misal dari URL kampanye lama).
+          </div>
+        </div>
+
+        {/* Filter and Search Bar */}
+        <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStatus('ALL');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterStatus === 'ALL'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Semua ({redirects.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStatus('ACTIVE');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterStatus === 'ACTIVE'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Aktif ({redirects.filter((r) => r.active).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterStatus('INACTIVE');
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                filterStatus === 'INACTIVE'
+                  ? 'bg-[#181d27] text-white'
+                  : 'bg-[#f9fafb] text-[#535862] hover:bg-[#f2f4f7]'
+              }`}
+            >
+              Nonaktif ({redirects.filter((r) => !r.active).length})
+            </button>
+          </div>
+
+          <div className="relative w-full sm:w-72">
+            <SearchLg className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#717680]" />
+            <input
+              type="text"
+              placeholder="Cari path asal, tujuan, atau catatan..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-9 pr-3 py-1.5 text-xs bg-white border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] w-full"
+            />
           </div>
         </div>
 
@@ -271,14 +354,16 @@ export default function RedirectsPage() {
                     Memuat redirects...
                   </td>
                 </tr>
-              ) : redirects.length === 0 ? (
+              ) : filteredRedirects.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-[#717680]">
-                    Belum ada aturan redirect aktif.
+                    {search || filterStatus !== 'ALL'
+                      ? 'Tidak ada aturan redirect yang cocok dengan filter.'
+                      : 'Belum ada aturan redirect aktif.'}
                   </td>
                 </tr>
               ) : (
-                redirects.map((r) => (
+                paginatedRedirects.map((r) => (
                   <tr key={r.id} className="hover:bg-[#f9fafb] transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2 font-mono text-[11px]">
@@ -337,6 +422,14 @@ export default function RedirectsPage() {
             </tbody>
           </table>
           </div>
+
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={filteredRedirects.length}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+          />
         </div>
       </div>
     </div>

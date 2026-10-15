@@ -5,6 +5,7 @@ import {
   Link01,
   Image01,
 } from '@untitledui/icons';
+import { api } from '@/lib/api';
 
 interface RichTextEditorProps {
   value: string;
@@ -256,15 +257,38 @@ export function RichTextEditor({
     }
   };
 
-  const addImage = () => {
-    const url = window.prompt('Masukkan URL Gambar:');
-    if (url) {
-      exec('insertImage', url);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleEditorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const media = await api.uploadMedia(file, file.name);
+      exec('insertImage', media.url);
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengunggah gambar');
+    } finally {
+      setUploadingImage(false);
+      if (e.target) e.target.value = '';
     }
+  };
+
+  const addImage = () => {
+    fileInputRef.current?.click();
   };
 
   return (
     <div className="w-full border border-[#d5d7da] rounded-xl bg-white overflow-hidden shadow-xs focus-within:border-[#465984] focus-within:ring-1 focus-within:ring-[#465984] transition-all">
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
+        onChange={handleEditorImageUpload}
+        className="hidden"
+      />
       {/* Visual Toolbar (Sesuai Referensi Gambar 2) */}
       <div className="flex flex-wrap items-center gap-1 p-2 bg-[#f8fafc] border-b border-[#eaecf0] text-sm text-[#334155] select-none">
         {/* Headings */}

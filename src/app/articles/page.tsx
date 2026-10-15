@@ -14,10 +14,11 @@ import {
   Globe01,
   Eye,
 } from '@untitledui/icons';
-import { api } from '@/lib/api';
+import { api, getLandingUrl } from '@/lib/api';
 import { Article, ArticleStatus } from '@/lib/types';
 import { Header } from '@/components/Header';
 import { formatDate } from '@/lib/utils';
+import { TablePagination } from '@/components/TablePagination';
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
@@ -107,7 +108,7 @@ export default function ArticlesPage() {
         }
       />
 
-      <div className="p-8 space-y-6 max-w-7xl">
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full flex-1">
         {/* KPI Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl border border-[#eaecf0] shadow-xs">
@@ -349,7 +350,7 @@ export default function ArticlesPage() {
                       <div className="inline-flex items-center gap-1.5">
                         {item.status === 'PUBLISHED' && (
                           <a
-                            href={`http://localhost:3000/blog/${item.slug}`}
+                            href={getLandingUrl(`/blog/${item.slug}`)}
                             target="_blank"
                             rel="noopener noreferrer"
                             title="Buka artikel live di Landing Page"
@@ -393,65 +394,13 @@ export default function ArticlesPage() {
           </div>
 
           {/* Pagination Controls */}
-          {total > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-white border-t border-[#eaecf0] text-xs text-[#535862]">
-              <div>
-                Menampilkan{' '}
-                <span className="font-semibold text-[#181d27]">
-                  {(page - 1) * limit + 1}
-                </span>{' '}
-                sampai{' '}
-                <span className="font-semibold text-[#181d27]">
-                  {Math.min(page * limit, total)}
-                </span>{' '}
-                dari{' '}
-                <span className="font-semibold text-[#181d27]">{total}</span> artikel
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  disabled={page <= 1 || loading}
-                  onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                  className="px-2.5 py-1.5 rounded-lg border border-[#d5d7da] hover:bg-[#f9fafb] text-[#344054] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition"
-                >
-                  Sebelumnya
-                </button>
-
-                <div className="flex items-center gap-1 px-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
-                    .map((p, idx, arr) => (
-                      <span key={p} className="flex items-center">
-                        {idx > 0 && arr[idx - 1] !== p - 1 && (
-                          <span className="px-1 text-[#98a2b3]">...</span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => setPage(p)}
-                          className={`size-7 rounded-lg text-xs font-semibold transition ${
-                            p === page
-                              ? 'bg-[#465984] text-white shadow-xs'
-                              : 'text-[#475467] hover:bg-[#f2f4f7]'
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      </span>
-                    ))}
-                </div>
-
-                <button
-                  type="button"
-                  disabled={page >= totalPages || loading}
-                  onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                  className="px-2.5 py-1.5 rounded-lg border border-[#d5d7da] hover:bg-[#f9fafb] text-[#344054] font-medium disabled:opacity-40 disabled:cursor-not-allowed transition"
-                >
-                  Selanjutnya
-                </button>
-              </div>
-            </div>
-          )}
+          <TablePagination
+            currentPage={page}
+            totalPages={totalPages}
+            totalItems={total}
+            itemsPerPage={limit}
+            onPageChange={setPage}
+          />
         </div>
       </div>
     </div>

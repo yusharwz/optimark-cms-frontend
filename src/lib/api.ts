@@ -10,6 +10,23 @@ import {
   User,
   AuthResponse,
 } from './types';
+import { compressImageToWebp } from './image-compression';
+
+export function getLandingUrl(path: string = ''): string {
+  const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
+  if (process.env.NEXT_PUBLIC_LANDING_URL) {
+    return `${process.env.NEXT_PUBLIC_LANDING_URL.replace(/\/+$/, '')}${cleanPath}`;
+  }
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname.includes('staging') || window.location.hostname.includes('dritech.co.id')) {
+      return `https://optimark-staging-landing.dritech.co.id${cleanPath}`;
+    }
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return `http://localhost:3000${cleanPath}`;
+    }
+  }
+  return `https://optimark.ai${cleanPath}`;
+}
 
 function getApiBase(): string {
   if (process.env.NEXT_PUBLIC_API_URL) {
@@ -211,9 +228,13 @@ export const api = {
   // Media
   getMedia: (limit = 50, offset = 0) => request<MediaItem[]>(`/media?limit=${limit}&offset=${offset}`),
   uploadMedia: async (file: File, altText?: string, convertToWebp = true): Promise<MediaItem> => {
+    // 0. Client-Side Image Validation & WebP Compression
+    // Validates max 5MB, ensures image MIME/extension, converts to WebP (quality 0.85)
+    const processedFile = convertToWebp ? await compressImageToWebp(file) : file;
+
     // 1. Request presigned URL from backend to upload direct to R2 (no BE load)
     try {
-      const mimeType = file.type || 'application/octet-stream';
+      const mimeType = processedFile.type || 'image/webp';
       const presigned = await request<{
         uploadUrl: string;
         fileUrl: string;
@@ -224,9 +245,9 @@ export const api = {
       }>('/media/presigned-url', {
         method: 'POST',
         body: JSON.stringify({
-          filename: file.name,
+          filename: processedFile.name,
           mimeType,
-          size: file.size,
+          size: processedFile.size,
           altText,
         }),
       });
@@ -237,7 +258,7 @@ export const api = {
         headers: {
           'Content-Type': mimeType,
         },
-        body: file,
+        body: processedFile,
       });
 
       if (!r2Res.ok) {
@@ -252,7 +273,7 @@ export const api = {
           url: presigned.fileUrl,
           filename: presigned.filename,
           mimeType: presigned.mimeType,
-          size: file.size,
+          size: processedFile.size,
           altText: presigned.altText,
         }),
       });
@@ -260,7 +281,7 @@ export const api = {
       console.warn('Presigned upload failed, falling back to backend upload:', presignedErr);
       // Fallback: direct multipart upload to backend
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', processedFile);
       if (altText) formData.append('altText', altText);
       formData.append('convertToWebp', convertToWebp ? 'true' : 'false');
 
