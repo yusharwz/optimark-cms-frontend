@@ -22,8 +22,10 @@ function createFigureHtml(src: string, alt: string): string {
         `<button type="button" data-action="edit-alt" class="px-2 py-1 rounded bg-[#181d27]/85 hover:bg-[#181d27] text-white text-[11px] font-semibold backdrop-blur-xs cursor-pointer shadow-xs transition" title="Ubah Alt Text">Alt Text</button>` +
         `<button type="button" data-action="delete-figure" class="px-2 py-1 rounded bg-red-600/85 hover:bg-red-700 text-white text-[11px] font-semibold backdrop-blur-xs cursor-pointer shadow-xs transition" title="Hapus Gambar dari Artikel">Hapus</button>` +
       `</div>` +
+      `<div contenteditable="false" class="editor-figure-badge absolute bottom-3 left-3 px-2 py-0.5 rounded bg-black/75 text-white text-[10px] font-mono backdrop-blur-xs flex items-center gap-1 z-10 select-none pointer-events-none shadow-xs">` +
+        `<span class="text-emerald-400 font-bold">ALT:</span> <span class="alt-label">${displayAlt}</span>` +
+      `</div>` +
       `<img src="${src}" alt="${cleanAlt}" class="rounded-lg max-w-full mx-auto" />` +
-      `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${displayAlt}</figcaption>` +
     `</figure>`
   );
 }
@@ -175,9 +177,15 @@ function htmlToMarkdown(element: HTMLElement): string {
     if (tag === 'figure' || el.classList.contains('editor-figure')) {
       const img = el.querySelector('img');
       const figcaption = el.querySelector('figcaption');
+      const altLabel = el.querySelector('.alt-label');
       if (img) {
         const src = img.getAttribute('src') || el.getAttribute('data-src') || '';
-        let alt = el.getAttribute('data-alt') || figcaption?.textContent?.trim() || img.getAttribute('alt') || '';
+        let alt =
+          el.getAttribute('data-alt') ||
+          altLabel?.textContent?.trim() ||
+          figcaption?.textContent?.trim() ||
+          img.getAttribute('alt') ||
+          '';
         if (alt === 'Tambahkan alt text gambar...') alt = '';
         if (src) parts.push(`![${alt}](${src})`);
         return;
@@ -377,11 +385,22 @@ export function RichTextEditor({
       if (newAlt !== null) {
         const cleanAlt = newAlt.trim();
         if (img) img.setAttribute('alt', cleanAlt);
+        const altLabel = figure.querySelector('.alt-label');
+        if (altLabel) {
+          altLabel.textContent = cleanAlt || 'Tambahkan alt text gambar...';
+        }
         if (figcaption) {
           figcaption.textContent = cleanAlt || 'Tambahkan alt text gambar...';
         }
         figure.setAttribute('data-alt', cleanAlt);
         handleInput();
+
+        const src = img?.getAttribute('src') || figure.getAttribute('data-src') || '';
+        if (src && cleanAlt) {
+          api.syncMediaAlt(src, cleanAlt).catch((err) => {
+            console.warn('[SyncMediaAlt Error]:', err);
+          });
+        }
       }
       return;
     }

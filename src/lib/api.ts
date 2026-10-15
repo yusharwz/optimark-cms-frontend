@@ -316,6 +316,11 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ altText }),
     }),
+  syncMediaAlt: (urlOrFilename: string, altText: string) =>
+    request<MediaItem | null>(`/media/sync-alt`, {
+      method: 'PATCH',
+      body: JSON.stringify({ urlOrFilename, altText }),
+    }).catch(() => null),
   deleteMedia: (id: string) =>
     request<{ success: boolean; id: string }>(`/media/${id}`, {
       method: 'DELETE',

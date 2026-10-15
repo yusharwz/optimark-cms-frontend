@@ -337,13 +337,71 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
 
       const primarySlug = (slugId.trim() || slug.trim() || titleId).toLowerCase().replace(/[^a-z0-9-]+/g, '');
 
+      // 1. Two-way image alt synchronization between languages
+      let finalContentId = contentId;
+      let finalContentEn = contentEn;
+
+      const idImgAlts = new Map<string, string>();
+      for (const m of contentId.matchAll(/!\[(.*?)\]\((.*?)\)/g)) {
+        if (m[1]?.trim() && m[2]) {
+          const key = m[2].split('/').pop()?.split('?')[0] || m[2];
+          idImgAlts.set(key, m[1].trim());
+          idImgAlts.set(m[2].trim(), m[1].trim());
+        }
+      }
+
+      const enImgAlts = new Map<string, string>();
+      for (const m of contentEn.matchAll(/!\[(.*?)\]\((.*?)\)/g)) {
+        if (m[1]?.trim() && m[2]) {
+          const key = m[2].split('/').pop()?.split('?')[0] || m[2];
+          enImgAlts.set(key, m[1].trim());
+          enImgAlts.set(m[2].trim(), m[1].trim());
+        }
+      }
+
+      // Propagate non-empty alt from ID to EN if EN has empty alt
+      finalContentEn = finalContentEn.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+        const cleanAlt = alt?.trim();
+        if (!cleanAlt) {
+          const key = url.split('/').pop()?.split('?')[0] || url;
+          const fallbackAlt = idImgAlts.get(key) || idImgAlts.get(url.trim());
+          if (fallbackAlt) return `![${fallbackAlt}](${url})`;
+        }
+        return match;
+      });
+
+      // Propagate non-empty alt from EN to ID if ID has empty alt
+      finalContentId = finalContentId.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, url) => {
+        const cleanAlt = alt?.trim();
+        if (!cleanAlt) {
+          const key = url.split('/').pop()?.split('?')[0] || url;
+          const fallbackAlt = enImgAlts.get(key) || enImgAlts.get(url.trim());
+          if (fallbackAlt) return `![${fallbackAlt}](${url})`;
+        }
+        return match;
+      });
+
+      if (finalContentId !== contentId) setContentId(finalContentId);
+      if (finalContentEn !== contentEn) setContentEn(finalContentEn);
+
+      // 2. Real-time background sync of all image alt tags to R2 / cms_media table
+      if (coverImageUrl && coverImageAlt?.trim()) {
+        api.syncMediaAlt(coverImageUrl, coverImageAlt.trim()).catch(() => null);
+      }
+      for (const [url, alt] of idImgAlts) {
+        api.syncMediaAlt(url, alt).catch(() => null);
+      }
+      for (const [url, alt] of enImgAlts) {
+        api.syncMediaAlt(url, alt).catch(() => null);
+      }
+
       const payload: any = {
         title: titleId || titleEn,
         slug: primarySlug || undefined,
         slugId: slugId.trim() || primarySlug || undefined,
         slugEn: slugEn.trim() || undefined,
         excerpt: undefined,
-        content: contentId || contentEn || '',
+        content: finalContentId || finalContentEn || '',
         metaTitle: metaTitleId || metaTitleEn || undefined,
         metaDescription: metaDescriptionId || metaDescriptionEn || undefined,
         canonicalUrl: autoCanonicalUrl || undefined,
@@ -361,14 +419,14 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
           id: {
             title: titleId,
             slug: slugId.trim() || primarySlug || undefined,
-            content: contentId,
+            content: finalContentId,
             metaTitle: metaTitleId,
             metaDescription: metaDescriptionId,
           },
           en: {
             title: titleEn,
             slug: slugEn.trim() || undefined,
-            content: contentEn,
+            content: finalContentEn,
             metaTitle: metaTitleEn,
             metaDescription: metaDescriptionEn,
           },
