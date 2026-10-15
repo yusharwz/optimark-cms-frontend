@@ -310,6 +310,10 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ altText }),
     }),
+  deleteMedia: (id: string) =>
+    request<{ success: boolean; id: string }>(`/media/${id}`, {
+      method: 'DELETE',
+    }),
 
   // Public / Preview
   getPreviewArticle: (token: string) => request<Article>(`/public/preview/${token}`),

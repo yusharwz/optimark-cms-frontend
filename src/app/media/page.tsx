@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { api } from '@/lib/api';
 import { MediaItem } from '@/lib/types';
-import { Upload01, Copy01, Check, Edit01, Image03, SearchLg } from '@untitledui/icons';
+import { Upload01, Copy01, Check, Edit01, Image03, SearchLg, Trash01 } from '@untitledui/icons';
 import { formatDate } from '@/lib/utils';
 import { TablePagination } from '@/components/TablePagination';
 
@@ -20,6 +20,7 @@ export default function MediaPage() {
   // Edit Alt Text state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [altInput, setAltInput] = useState('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadMedia = async () => {
     try {
@@ -66,6 +67,21 @@ export default function MediaPage() {
       loadMedia();
     } catch (err: any) {
       alert(err.message || 'Gagal update alt text');
+    }
+  };
+
+  const handleDelete = async (item: MediaItem) => {
+    if (!window.confirm(`Hapus media "${item.filename}" secara permanen dari Cloudflare R2 dan database?`)) {
+      return;
+    }
+    try {
+      setDeletingId(item.id);
+      await api.deleteMedia(item.id);
+      setMedia((prev) => prev.filter((m) => m.id !== item.id));
+    } catch (err: any) {
+      alert(err.message || 'Gagal menghapus media');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -146,20 +162,37 @@ export default function MediaPage() {
                   <img
                     src={item.url}
                     alt={item.altText || item.filename}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (target.src.endsWith('.jpg') || target.src.endsWith('.png') || target.src.endsWith('.jpeg')) {
+                        target.src = target.src.replace(/\.(?:jpg|jpeg|png)$/i, '.webp');
+                      }
+                    }}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   />
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(item.url, item.id)}
-                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition cursor-pointer"
-                    title="Salin URL Gambar"
-                  >
-                    {copiedId === item.id ? (
-                      <Check className="size-3.5 text-[#12b76a]" />
-                    ) : (
-                      <Copy01 className="size-3.5 text-white" />
-                    )}
-                  </button>
+                  <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition">
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(item.url, item.id)}
+                      className="p-1.5 rounded-lg bg-black/60 hover:bg-black/80 text-white backdrop-blur-sm transition cursor-pointer"
+                      title="Salin URL Gambar"
+                    >
+                      {copiedId === item.id ? (
+                        <Check className="size-3.5 text-[#12b76a]" />
+                      ) : (
+                        <Copy01 className="size-3.5 text-white" />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item)}
+                      disabled={deletingId === item.id}
+                      className="p-1.5 rounded-lg bg-red-600/80 hover:bg-red-700 text-white backdrop-blur-sm transition cursor-pointer disabled:opacity-50"
+                      title="Hapus Media dari R2 & Database"
+                    >
+                      <Trash01 className="size-3.5 text-white" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2 text-xs">
