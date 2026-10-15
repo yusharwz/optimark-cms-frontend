@@ -43,7 +43,8 @@ export default function MediaPage() {
 
     try {
       setUploading(true);
-      await api.uploadMedia(file, file.name, true);
+      const targetSlug = file.name.replace(/\.[^/.]+$/, '');
+      await api.uploadMedia(file, file.name, true, targetSlug);
       loadMedia();
     } catch (err: any) {
       alert(err.message || 'Gagal upload media');

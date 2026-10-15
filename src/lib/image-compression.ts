@@ -3,6 +3,8 @@
  * - Validates file size (max 5MB)
  * - Validates MIME type and file extension (images only, rejects scripts/executables)
  * - Compresses raster images to WebP via HTML5 Canvas (quality: 0.85, max dimension: 1920px)
+ * - Auto-formats filenames to clean kebab-case slugs, preserving parentheses as requested
+ *   (e.g., "Digital Marketing (SEO Specialist)" -> "digital-marketing-(seo-specialist)")
  * - Preserves SVG/GIF or converts JPEG/PNG/WebP/AVIF to clean WebP
  * - Runs 100% in the user's browser, freeing server resources and securing the backend.
  */
@@ -27,6 +29,20 @@ const ALLOWED_EXTENSIONS = new Set([
   '.svg',
   '.avif',
 ]);
+
+/**
+ * Convert string to clean kebab-case slug, preserving parentheses and clean words.
+ * e.g., "Digital Marketing (SEO Specialist)" -> "digital-marketing-(seo-specialist)"
+ */
+export function toKebabSlug(str: string): string {
+  if (!str) return 'file';
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-()]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
 
 export function validateImageFile(file: File): void {
   if (!file) {
@@ -62,10 +78,14 @@ export async function compressImageToWebp(
     maxWidth?: number;
     maxHeight?: number;
     quality?: number;
+    targetName?: string;
   } = {}
 ): Promise<File> {
   // 1. Client-side validation
   validateImageFile(file);
+
+  const rawBase = options.targetName || file.name.replace(/\.[^/.]+$/, '');
+  const cleanBase = toKebabSlug(rawBase) || 'file';
 
   // SVG files are vector - do not convert to raster WebP
   if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
@@ -123,9 +143,8 @@ export async function compressImageToWebp(
                 return resolve(file);
               }
 
-              // Determine new filename with .webp extension
-              const baseName = file.name.replace(/\.[^/.]+$/, '');
-              const newFileName = `${baseName}.webp`;
+              // Set the slugified filename with .webp extension
+              const newFileName = `${cleanBase}.webp`;
 
               const webpFile = new File([blob], newFileName, {
                 type: 'image/webp',

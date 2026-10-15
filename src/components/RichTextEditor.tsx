@@ -266,7 +266,8 @@ export function RichTextEditor({
 
     setUploadingImage(true);
     try {
-      const media = await api.uploadMedia(file, file.name);
+      const targetSlug = file.name.replace(/\.[^/.]+$/, '');
+      const media = await api.uploadMedia(file, file.name, true, targetSlug);
       exec('insertImage', media.url);
     } catch (err: any) {
       alert(err.message || 'Gagal mengunggah gambar');

@@ -227,11 +227,18 @@ export const api = {
 
   // Media
   getMedia: (limit = 50, offset = 0) => request<MediaItem[]>(`/media?limit=${limit}&offset=${offset}`),
-  uploadMedia: async (file: File, altText?: string, convertToWebp = true): Promise<MediaItem> => {
+  uploadMedia: async (
+    file: File,
+    altText?: string,
+    convertToWebp = true,
+    targetSlug?: string,
+  ): Promise<MediaItem> => {
     // 0. Client-Side Image Validation & WebP Compression
-    // Validates max 5MB, ensures image MIME/extension, converts to WebP (quality 0.85)
-    const processedFile = convertToWebp ? await compressImageToWebp(file) : file;
-
+    // Runs in browser: validates <5MB, checks allowed image format (rejects js, php, etc.),
+    // and converts to crisp WebP (quality 0.85) with automatic kebab-case slug naming.
+    const processedFile = convertToWebp
+      ? await compressImageToWebp(file, { targetName: targetSlug || altText })
+      : file;
     // 1. Request presigned URL from backend to upload direct to R2 (no BE load)
     try {
       const mimeType = processedFile.type || 'image/webp';

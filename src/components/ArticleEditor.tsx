@@ -246,7 +246,8 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
 
     setUploadingImage(true);
     try {
-      const media = await api.uploadMedia(file, coverImageAlt || currentTitle || 'Cover Image');
+      const targetSlug = slug || currentTitle || file.name;
+      const media = await api.uploadMedia(file, coverImageAlt || currentTitle || 'Cover Image', true, targetSlug);
       setCoverImageUrl(media.url);
       setMessage({ type: 'success', text: 'Gambar berhasil diunggah ke storage Cloudflare R2!' });
     } catch (err: any) {

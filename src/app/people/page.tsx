@@ -91,7 +91,8 @@ export default function PeoplePage() {
 
     try {
       setUploadingAvatar(true);
-      const res = await api.uploadMedia(file, `Avatar ${name || 'Author'}`, true);
+      const targetSlug = slug || name || 'avatar';
+      const res = await api.uploadMedia(file, `Avatar ${name || 'Author'}`, true, targetSlug);
       setAvatarUrl(res.url);
     } catch (err: any) {
       alert(err.message || 'Gagal upload avatar');
@@ -779,7 +780,8 @@ export default function PeoplePage() {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
                                   try {
-                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    const targetSlug = item.title || item.org || 'experience';
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`, true, targetSlug);
                                     updateExperienceItem('id', idx, 'logo', res.url);
                                   } catch (err: any) {
                                     alert('Gagal upload logo: ' + err.message);
@@ -865,7 +867,8 @@ export default function PeoplePage() {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
                                   try {
-                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    const targetSlug = item.title || item.org || 'education';
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`, true, targetSlug);
                                     updateEducationItem('id', idx, 'logo', res.url);
                                   } catch (err: any) {
                                     alert('Gagal upload logo: ' + err.message);
@@ -1007,7 +1010,8 @@ export default function PeoplePage() {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
                                   try {
-                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    const targetSlug = item.title || item.org || 'experience';
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`, true, targetSlug);
                                     updateExperienceItem('en', idx, 'logo', res.url);
                                   } catch (err: any) {
                                     alert('Failed to upload logo: ' + err.message);
@@ -1093,7 +1097,8 @@ export default function PeoplePage() {
                                   const file = e.target.files?.[0];
                                   if (!file) return;
                                   try {
-                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`);
+                                    const targetSlug = item.title || item.org || 'education';
+                                    const res = await api.uploadMedia(file, `${item.org || 'Logo'}`, true, targetSlug);
                                     updateEducationItem('en', idx, 'logo', res.url);
                                   } catch (err: any) {
                                     alert('Failed to upload logo: ' + err.message);
