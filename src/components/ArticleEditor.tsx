@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -14,11 +14,9 @@ import {
   Globe01,
   Upload01,
   Zap,
-  HelpCircle,
-  Trash01,
 } from '@untitledui/icons';
 import { Article, Category, Person } from '@/lib/types';
-import { api } from '@/lib/api';
+import { api, getLandingUrl } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { RichTextEditor } from './RichTextEditor';
 import { ArticlePreviewModal } from './ArticlePreviewModal';
@@ -63,7 +61,10 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const [slug, setSlug] = useState(initialData?.slug || '');
   const [slugId, setSlugId] = useState(initialId?.slug || initialData?.slugId || initialData?.slug || '');
   const [slugEn, setSlugEn] = useState(initialEn?.slug || initialData?.slugEn || '');
-  const [canonicalUrl, setCanonicalUrl] = useState(initialData?.canonicalUrl || '');
+  const autoCanonicalUrl = useMemo(() => {
+    const effectiveSlug = slugId.trim() || slugEn.trim() || slug.trim();
+    return effectiveSlug ? getLandingUrl(`/blog/${effectiveSlug}`) : '';
+  }, [slugId, slugEn, slug]);
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl || '');
   const [coverImageAlt, setCoverImageAlt] = useState(initialData?.coverImageAlt || '');
   const [tagsInput, setTagsInput] = useState(initialData?.tags?.join(', ') || '');
@@ -345,7 +346,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         content: contentId || contentEn || '',
         metaTitle: metaTitleId || metaTitleEn || undefined,
         metaDescription: metaDescriptionId || metaDescriptionEn || undefined,
-        canonicalUrl: canonicalUrl || undefined,
+        canonicalUrl: autoCanonicalUrl || undefined,
         coverImageUrl: coverImageUrl || undefined,
         coverImageAlt: coverImageAlt || undefined,
         tags: tagsArray,
@@ -1004,14 +1005,18 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-[#535862]">Canonical URL (Opsional)</label>
-              <input
-                type="url"
-                value={canonicalUrl}
-                onChange={(e) => setCanonicalUrl(e.target.value)}
-                placeholder="https://optimark.ai/blog/..."
-                className="w-full px-3 py-2 text-xs border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984]"
-              />
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[#535862]">Canonical URL</label>
+                <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                  Otomatis Realtime
+                </span>
+              </div>
+              <div className="w-full px-3 py-2 text-xs font-mono bg-[#f8f9fa] border border-[#eaecf0] rounded-lg text-[#535862] truncate select-all">
+                {autoCanonicalUrl || getLandingUrl('/blog/slug-artikel')}
+              </div>
+              <p className="text-[11px] text-[#717680]">
+                Canonical URL tergenerasi otomatis mengikuti slug utama artikel ({autoCanonicalUrl ? 'aktif' : 'menunggu slug'}).
+              </p>
             </div>
           </div>
         </div>

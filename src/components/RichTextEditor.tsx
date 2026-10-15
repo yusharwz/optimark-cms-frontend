@@ -17,7 +17,6 @@ interface RichTextEditorProps {
 function markdownToHtml(md: string): string {
   if (!md) return '<p><br></p>';
 
-  // Clean empty lines
   const lines = md.split('\n');
   const htmlParts: string[] = [];
   let inUl = false;
@@ -66,6 +65,21 @@ function markdownToHtml(md: string): string {
       continue;
     }
 
+    if (line.startsWith('![')) {
+      const match = line.match(/^!\[(.*?)\]\((.*?)\)/);
+      if (match) {
+        const alt = match[1] || '';
+        const src = match[2] || '';
+        htmlParts.push(
+          `<figure class="editor-figure my-4 text-center select-none" data-src="${src}" data-alt="${alt}">` +
+            `<img src="${src}" alt="${alt}" class="rounded-xl max-w-full mx-auto" />` +
+            `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${alt || 'Tambahkan alt text gambar...'}</figcaption>` +
+          `</figure>`
+        );
+        continue;
+      }
+    }
+
     if (line.startsWith('### ')) {
       htmlParts.push(`<h3>${formatInline(line.substring(4))}</h3>`);
     } else if (line.startsWith('## ')) {
@@ -91,7 +105,14 @@ function formatInline(text: string): string {
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/~~(.*?)~~/g, '<del>$1</del>')
     .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>')
-    .replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" />');
+    .replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, src) => {
+      return (
+        `<figure class="editor-figure my-4 text-center select-none" data-src="${src}" data-alt="${alt}">` +
+          `<img src="${src}" alt="${alt}" class="rounded-xl max-w-full mx-auto" />` +
+          `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${alt || 'Tambahkan alt text gambar...'}</figcaption>` +
+        `</figure>`
+      );
+    });
 }
 
 // Convert visual HTML from contentEditable back to clean Markdown
@@ -128,10 +149,19 @@ function htmlToMarkdown(element: HTMLElement): string {
           } else if (cTag === 'a') {
             const href = cEl.getAttribute('href') || '#';
             res += `[${inlineContent(cEl)}](${href})`;
+          } else if (cTag === 'figure') {
+            const img = cEl.querySelector('img');
+            const figcaption = cEl.querySelector('figcaption');
+            if (img) {
+              const src = img.getAttribute('src') || cEl.getAttribute('data-src') || '';
+              let alt = figcaption?.textContent?.trim() || img.getAttribute('alt') || cEl.getAttribute('data-alt') || '';
+              if (alt === 'Tambahkan alt text gambar...') alt = '';
+              res += `\n\n![${alt}](${src})\n\n`;
+            }
           } else if (cTag === 'img') {
             const src = cEl.getAttribute('src') || '';
             const alt = cEl.getAttribute('alt') || '';
-            res += `![${alt}](${src})`;
+            res += `\n\n![${alt}](${src})\n\n`;
           } else if (cTag === 'br') {
             res += '\n';
           } else {
@@ -142,7 +172,22 @@ function htmlToMarkdown(element: HTMLElement): string {
       return res;
     };
 
-    if (tag === 'h1') {
+    if (tag === 'figure') {
+      const img = el.querySelector('img');
+      const figcaption = el.querySelector('figcaption');
+      if (img) {
+        const src = img.getAttribute('src') || el.getAttribute('data-src') || '';
+        let alt = figcaption?.textContent?.trim() || img.getAttribute('alt') || el.getAttribute('data-alt') || '';
+        if (alt === 'Tambahkan alt text gambar...') alt = '';
+        parts.push(`![${alt}](${src})`);
+        return;
+      }
+    } else if (tag === 'img') {
+      const src = el.getAttribute('src') || '';
+      const alt = el.getAttribute('alt') || '';
+      parts.push(`![${alt}](${src})`);
+      return;
+    } else if (tag === 'h1') {
       parts.push(`# ${inlineContent(el)}`);
     } else if (tag === 'h2') {
       parts.push(`## ${inlineContent(el)}`);
@@ -182,6 +227,7 @@ export function RichTextEditor({
     italic: false,
     underline: false,
     strike: false,
+    p: true,
     h1: false,
     h2: false,
     h3: false,
@@ -200,15 +246,17 @@ export function RichTextEditor({
   const updateFormatState = useCallback(() => {
     if (typeof window === 'undefined' || !document.queryCommandState) return;
     try {
+      const blockVal = (document.queryCommandValue('formatBlock') || '').toLowerCase();
       setActiveFormats({
         bold: document.queryCommandState('bold'),
         italic: document.queryCommandState('italic'),
         underline: document.queryCommandState('underline'),
         strike: document.queryCommandState('strikeThrough'),
-        h1: document.queryCommandValue('formatBlock') === 'h1',
-        h2: document.queryCommandValue('formatBlock') === 'h2',
-        h3: document.queryCommandValue('formatBlock') === 'h3',
-        blockquote: document.queryCommandValue('formatBlock') === 'blockquote',
+        p: blockVal === 'p' || blockVal === 'div' || !['h1', 'h2', 'h3', 'blockquote'].includes(blockVal),
+        h1: blockVal === 'h1',
+        h2: blockVal === 'h2',
+        h3: blockVal === 'h3',
+        blockquote: blockVal === 'blockquote',
       });
     } catch {
       // fallback
@@ -264,13 +312,33 @@ export function RichTextEditor({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const defaultAlt = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]+/g, ' ');
+    const userAlt = window.prompt('Masukkan Alt Text Gambar (SEO Image Alt Tag):', defaultAlt);
+    if (userAlt === null) {
+      if (e.target) e.target.value = '';
+      return;
+    }
+
     setUploadingImage(true);
     try {
       const targetSlug = file.name.replace(/\.[^/.]+$/, '');
       const media = await api.uploadMedia(file, file.name, true, targetSlug);
-      exec('insertImage', media.url);
-    } catch (err: any) {
-      alert(err.message || 'Gagal mengunggah gambar');
+      const altText = userAlt.trim() || defaultAlt;
+
+      const figureHtml =
+        `<figure class="editor-figure my-4 text-center select-none" data-src="${media.url}" data-alt="${altText}">` +
+          `<img src="${media.url}" alt="${altText}" class="rounded-xl max-w-full mx-auto" />` +
+          `<figcaption contenteditable="true" class="editor-figcaption text-xs text-[#535862] mt-1.5 font-medium italic text-center cursor-text hover:text-[#181d27] transition-colors" title="Klik untuk edit Alt Text">${altText}</figcaption>` +
+        `</figure><p><br></p>`;
+
+      if (editorRef.current) {
+        editorRef.current.focus();
+        document.execCommand('insertHTML', false, figureHtml);
+        handleInput();
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Gagal mengunggah gambar';
+      alert(msg);
     } finally {
       setUploadingImage(false);
       if (e.target) e.target.value = '';
@@ -281,8 +349,32 @@ export function RichTextEditor({
     fileInputRef.current?.click();
   };
 
+  const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName.toLowerCase() === 'img') {
+      const fig = target.closest('figure');
+      const figcaption = fig?.querySelector('figcaption');
+      const currentAlt = figcaption?.textContent?.trim() || target.getAttribute('alt') || '';
+      const newAlt = window.prompt(
+        'Ubah Alt Text Gambar (SEO Image Alt Tag):',
+        currentAlt === 'Tambahkan alt text gambar...' ? '' : currentAlt
+      );
+      if (newAlt !== null) {
+        const cleanAlt = newAlt.trim();
+        target.setAttribute('alt', cleanAlt);
+        if (figcaption) {
+          figcaption.textContent = cleanAlt || 'Tambahkan alt text gambar...';
+        }
+        if (fig) {
+          fig.setAttribute('data-alt', cleanAlt);
+        }
+        handleInput();
+      }
+    }
+  };
+
   return (
-    <div className="w-full border border-[#d5d7da] rounded-xl bg-white overflow-hidden shadow-xs focus-within:border-[#465984] focus-within:ring-1 focus-within:ring-[#465984] transition-all">
+    <div className="w-full border border-[#d5d7da] rounded-xl bg-white shadow-xs focus-within:border-[#465984] focus-within:ring-1 focus-within:ring-[#465984] transition-all relative">
       <input
         type="file"
         ref={fileInputRef}
@@ -290,10 +382,21 @@ export function RichTextEditor({
         onChange={handleEditorImageUpload}
         className="hidden"
       />
-      {/* Visual Toolbar (Sesuai Referensi Gambar 2) */}
-      <div className="flex flex-wrap items-center gap-1 p-2 bg-[#f8fafc] border-b border-[#eaecf0] text-sm text-[#334155] select-none">
-        {/* Headings */}
+
+      {/* Sticky Visual Toolbar */}
+      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-1 p-2 bg-[#f8fafc]/95 backdrop-blur-xs rounded-t-xl border-b border-[#eaecf0] text-sm text-[#334155] select-none shadow-xs">
+        {/* Headings & Paragraph Selector */}
         <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => exec('formatBlock', '<p>')}
+            className={`px-2.5 py-1 rounded text-xs font-semibold transition ${
+              activeFormats.p ? 'bg-[#e2e8f0] text-[#0f172a] shadow-xs' : 'hover:bg-[#e2e8f0]/60 text-[#475569]'
+            }`}
+            title="Paragraf / Teks Normal (P)"
+          >
+            P
+          </button>
           <button
             type="button"
             onClick={() => setHeading(1)}
@@ -343,17 +446,17 @@ export function RichTextEditor({
           <button
             type="button"
             onClick={() => exec('italic')}
-            className={`size-7 rounded italic font-serif transition flex items-center justify-center ${
+            className={`size-7 rounded italic transition flex items-center justify-center ${
               activeFormats.italic ? 'bg-[#e2e8f0] text-[#0f172a]' : 'hover:bg-[#e2e8f0]/60 text-[#475569]'
             }`}
             title="Miring (Italic)"
           >
-            /
+            I
           </button>
           <button
             type="button"
             onClick={() => exec('underline')}
-            className={`size-7 rounded underline font-medium transition flex items-center justify-center ${
+            className={`size-7 rounded underline transition flex items-center justify-center ${
               activeFormats.underline ? 'bg-[#e2e8f0] text-[#0f172a]' : 'hover:bg-[#e2e8f0]/60 text-[#475569]'
             }`}
             title="Garis Bawah (Underline)"
@@ -363,7 +466,7 @@ export function RichTextEditor({
           <button
             type="button"
             onClick={() => exec('strikeThrough')}
-            className={`size-7 rounded line-through font-medium transition flex items-center justify-center ${
+            className={`size-7 rounded line-through transition flex items-center justify-center ${
               activeFormats.strike ? 'bg-[#e2e8f0] text-[#0f172a]' : 'hover:bg-[#e2e8f0]/60 text-[#475569]'
             }`}
             title="Coret (Strikethrough)"
@@ -375,7 +478,7 @@ export function RichTextEditor({
         <div className="h-5 w-px bg-[#cbd5e1] mx-1" />
 
         {/* Lists */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             type="button"
             onClick={() => exec('insertUnorderedList')}
@@ -400,12 +503,12 @@ export function RichTextEditor({
 
         {/* Blockquote */}
         <button
-          type="button"
-          onClick={setBlockquote}
-          className={`px-2 py-1 rounded text-xs font-medium transition flex items-center gap-1 ${
-            activeFormats.blockquote ? 'bg-[#e2e8f0] text-[#0f172a] shadow-xs' : 'hover:bg-[#e2e8f0]/60 text-[#475569]'
-          }`}
-          title="Kutipan (Blockquote)"
+            type="button"
+            onClick={setBlockquote}
+            className={`px-2 py-1 rounded text-xs font-medium transition flex items-center gap-1 ${
+              activeFormats.blockquote ? 'bg-[#e2e8f0] text-[#0f172a] shadow-xs' : 'hover:bg-[#e2e8f0]/60 text-[#475569]'
+            }`}
+            title="Kutipan (Blockquote)"
         >
           <span>&ldquo;</span>
           <span>Quote</span>
@@ -457,35 +560,37 @@ export function RichTextEditor({
           <button
             type="button"
             onClick={addImage}
-            className="px-2 py-1 rounded text-xs font-medium hover:bg-[#e2e8f0]/60 text-[#475569] transition flex items-center gap-1"
-            title="Sisipkan Gambar"
+            disabled={uploadingImage}
+            className="px-2 py-1 rounded text-xs font-medium hover:bg-[#e2e8f0]/60 text-[#475569] transition flex items-center gap-1 disabled:opacity-50"
+            title="Sisipkan Gambar (dengan Alt Text)"
           >
             <Image01 className="size-3.5" />
-            <span>Image</span>
+            <span>{uploadingImage ? 'Mengunggah...' : 'Image'}</span>
           </button>
         </div>
       </div>
 
-      {/* Visual Canvas (Sesuai Referensi Gambar 2) */}
+      {/* Visual Canvas */}
       <div
         ref={editorRef}
         contentEditable
         onInput={handleInput}
+        onClick={handleEditorClick}
         onKeyUp={updateFormatState}
         onMouseUp={updateFormatState}
         style={{ minHeight }}
-        className="w-full p-5 focus:outline-none text-[#1e293b] leading-relaxed overflow-y-auto cursor-text [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-[#1e293b] [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-[#1e293b] [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#1e293b] [&_h3]:mt-2 [&_h3]:mb-1 [&_p]:text-base [&_p]:text-[#334155] [&_p]:leading-relaxed [&_p]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-[#94a3b8] [&_blockquote]:pl-4 [&_blockquote]:py-1 [&_blockquote]:italic [&_blockquote]:text-[#475569] [&_blockquote]:my-3 [&_blockquote]:bg-[#f8fafc] [&_blockquote]:rounded-r-lg [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_a]:text-[#465984] [&_a]:underline [&_img]:rounded-xl [&_img]:max-w-full [&_img]:my-3"
+        className="w-full p-5 focus:outline-none text-[#1e293b] leading-relaxed overflow-y-auto cursor-text [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-[#1e293b] [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-[#1e293b] [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-[#1e293b] [&_h3]:mt-2 [&_h3]:mb-1 [&_p]:text-base [&_p]:text-[#334155] [&_p]:leading-relaxed [&_p]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-[#94a3b8] [&_blockquote]:pl-4 [&_blockquote]:py-1 [&_blockquote]:italic [&_blockquote]:text-[#475569] [&_blockquote]:my-3 [&_blockquote]:bg-[#f8fafc] [&_blockquote]:rounded-r-lg [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_a]:text-[#465984] [&_a]:underline [&_figure]:my-4 [&_figure]:text-center [&_figure_img]:rounded-xl [&_figure_img]:max-w-full [&_figure_img]:mx-auto [&_figure_figcaption]:text-xs [&_figure_figcaption]:text-[#535862] [&_figure_figcaption]:mt-1.5 [&_figure_figcaption]:font-medium [&_figure_figcaption]:italic"
       />
 
       {/* Footer Status Bar */}
-      <div className="px-4 py-2 bg-[#f8fafc] border-t border-[#eaecf0] flex items-center justify-between text-xs text-[#717680]">
+      <div className="px-4 py-2 bg-[#f8fafc] border-t border-[#eaecf0] rounded-b-xl flex items-center justify-between text-xs text-[#717680]">
         <div className="flex items-center gap-3">
           <span className="font-semibold text-[#465984]">WYSIWYG Visual Canvas</span>
           <span>•</span>
-          <span>Tampilan akhir langsung tanpa karakter simbol markdown</span>
+          <span>Alt Text Gambar langsung terlihat & dapat diedit di bawah gambar</span>
         </div>
         <div className="text-[11px] text-[#94a3b8]">
-          Tersimpan otomatis ke database sebagai Markdown & HTML terstruktur
+          Tersimpan otomatis ke database sebagai Markdown &amp; HTML terstruktur
         </div>
       </div>
     </div>
