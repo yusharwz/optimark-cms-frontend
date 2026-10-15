@@ -48,7 +48,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const initialEn = initialData?.translations?.find((t) => t.locale === 'en');
 
   const [titleId, setTitleId] = useState(initialId?.title || initialData?.title || '');
-  const [excerptId, setExcerptId] = useState(initialId?.excerpt || initialData?.excerpt || '');
   const [contentId, setContentId] = useState(initialId?.content || initialData?.content || '');
   const [metaTitleId, setMetaTitleId] = useState(initialId?.metaTitle || initialData?.metaTitle || '');
   const [metaDescriptionId, setMetaDescriptionId] = useState(
@@ -56,7 +55,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   );
 
   const [titleEn, setTitleEn] = useState(initialEn?.title || '');
-  const [excerptEn, setExcerptEn] = useState(initialEn?.excerpt || '');
   const [contentEn, setContentEn] = useState(initialEn?.content || '');
   const [metaTitleEn, setMetaTitleEn] = useState(initialEn?.metaTitle || '');
   const [metaDescriptionEn, setMetaDescriptionEn] = useState(initialEn?.metaDescription || '');
@@ -124,7 +122,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   // Form baseline snapshot for reliable isDirty tracking
   const currentSnapshot = JSON.stringify({
     titleId,
-    excerptId,
     contentId,
     slug,
     slugId,
@@ -134,7 +131,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
     authorId,
     selectedStatus,
     titleEn,
-    excerptEn,
     contentEn,
     metaTitleId,
     metaDescriptionId,
@@ -155,12 +151,12 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const isDirty = useMemo(() => {
     if (!baselineSnapshot) {
       if (!initialData) {
-        return Boolean(titleId || excerptId || contentId || slug || coverImageUrl);
+        return Boolean(titleId || contentId || slug || coverImageUrl);
       }
       return false;
     }
     return currentSnapshot !== baselineSnapshot;
-  }, [baselineSnapshot, currentSnapshot, initialData, titleId, excerptId, contentId, slug, coverImageUrl]);
+  }, [baselineSnapshot, currentSnapshot, initialData, titleId, contentId, slug, coverImageUrl]);
 
   // Native beforeunload window guard on reload / close
   useEffect(() => {
@@ -203,7 +199,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
 
   // Current values based on activeLocale
   const currentTitle = activeLocale === 'id' ? titleId : titleEn;
-  const currentExcerpt = activeLocale === 'id' ? excerptId : excerptEn;
   const currentContent = activeLocale === 'id' ? contentId : contentEn;
   const currentMetaTitle = activeLocale === 'id' ? metaTitleId : metaTitleEn;
   const currentMetaDesc = activeLocale === 'id' ? metaDescriptionId : metaDescriptionEn;
@@ -211,13 +206,18 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const handleTitleChange = (val: string) => {
     if (activeLocale === 'id') {
       setTitleId(val);
-      if (!initialData && (!slugId || slugId === '')) {
+      if (!initialData) {
         const autoSlug = val
           .toLowerCase()
           .replace(/[^a-z0-9-]+/g, '-')
           .replace(/(^-|-$)+/g, '');
-        setSlugId(autoSlug);
-        setSlug(autoSlug);
+        if (!slugId || slugId === '') {
+          setSlugId(autoSlug);
+          setSlug(autoSlug);
+        }
+        if (!slugEn || slugEn === '') {
+          setSlugEn(autoSlug);
+        }
       }
     } else {
       setTitleEn(val);
@@ -229,11 +229,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         setSlugEn(autoSlug);
       }
     }
-  };
-
-  const handleExcerptChange = (val: string) => {
-    if (activeLocale === 'id') setExcerptId(val);
-    else setExcerptEn(val);
   };
 
   const handleContentChange = (val: string) => {
@@ -273,11 +268,11 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const validateMandatoryFields = (): string[] => {
     const missing: string[] = [];
     if (!titleId.trim() && !titleEn.trim()) missing.push('Judul Artikel');
-    if (!slugId.trim() && !slug.trim()) missing.push('Slug URL (ID)');
+    if (!slugId.trim()) missing.push('Slug URL (ID)');
+    if (!slugEn.trim()) missing.push('Slug URL (EN)');
     if (!categoryId) missing.push('Kategori Blog');
     if (!authorId) missing.push('Penulis (Author)');
     if (!coverImageUrl.trim()) missing.push('Gambar Sampul (Cover Image)');
-    if (!excerptId.trim() && !excerptEn.trim()) missing.push('Ringkasan / Excerpt');
     if (!contentId.trim() && !contentEn.trim()) missing.push('Isi Konten Artikel');
     if (selectedStatus === 'SCHEDULED' && !scheduledAt) missing.push('Waktu Jadwal Publikasi');
     return missing;
@@ -286,6 +281,22 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   // Submit action logic
   const handleSubmit = async (overrideStatus?: PublishOption) => {
     const targetStatus = overrideStatus || selectedStatus;
+
+    // Enforce mandatory dual slugs in all modes (draft & publish)
+    if (!slugId.trim()) {
+      setMessage({
+        type: 'error',
+        text: 'Slug URL (ID) wajib diisi dan tidak boleh kosong.',
+      });
+      return;
+    }
+    if (!slugEn.trim()) {
+      setMessage({
+        type: 'error',
+        text: 'Slug URL (EN) wajib diisi dan tidak boleh kosong. Klik "Samakan dengan ID" jika ingin menyamakan.',
+      });
+      return;
+    }
 
     // Enforce mandatory fields for PUBLISHED & SCHEDULED
     if (targetStatus === 'PUBLISHED' || targetStatus === 'SCHEDULED') {
@@ -330,7 +341,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         slug: primarySlug || undefined,
         slugId: slugId.trim() || primarySlug || undefined,
         slugEn: slugEn.trim() || undefined,
-        excerpt: excerptId || excerptEn || undefined,
+        excerpt: undefined,
         content: contentId || contentEn || '',
         metaTitle: metaTitleId || metaTitleEn || undefined,
         metaDescription: metaDescriptionId || metaDescriptionEn || undefined,
@@ -349,7 +360,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
           id: {
             title: titleId,
             slug: slugId.trim() || primarySlug || undefined,
-            excerpt: excerptId,
             content: contentId,
             metaTitle: metaTitleId,
             metaDescription: metaDescriptionId,
@@ -357,7 +367,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
           en: {
             title: titleEn,
             slug: slugEn.trim() || undefined,
-            excerpt: excerptEn,
             content: contentEn,
             metaTitle: metaTitleEn,
             metaDescription: metaDescriptionEn,
@@ -636,24 +645,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
             />
           </div>
 
-          {/* Article Excerpt Input */}
-          <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-semibold text-[#344054]">
-                Ringkasan Eksekutif (Excerpt){' '}
-                <span className="text-red-500">*wajib untuk publikasi</span>
-              </label>
-              <span className="text-xs text-[#717680]">{currentExcerpt.length} karakter</span>
-            </div>
-            <textarea
-              rows={3}
-              value={currentExcerpt}
-              onChange={(e) => handleExcerptChange(e.target.value)}
-              placeholder="Ringkasan singkat 2-3 kalimat yang memikat pembaca di feed blog dan feed sosial..."
-              className="w-full px-3.5 py-2.5 text-sm border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984] focus:outline-hidden text-[#181d27]"
-            />
-          </div>
-
           {/* WYSIWYG Rich Text Content Editor (Gambar 2 Visual Implementation) */}
           <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-3">
             <div className="flex items-center justify-between">
@@ -701,7 +692,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                 {currentMetaTitle || currentTitle || 'Judul Halaman di Hasil Pencarian'}
               </div>
               <div className="text-xs text-[#4d5156] line-clamp-2 leading-relaxed">
-                {currentMetaDesc || currentExcerpt || 'Deskripsi meta ringkas yang menarik klik calon pembaca...'}
+                {currentMetaDesc || 'Deskripsi meta ringkas yang menarik klik calon pembaca...'}
               </div>
             </div>
 
@@ -778,9 +769,15 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                     setSlug(val);
                   }}
                   placeholder="riset-keyword-lokal"
+                  required
                   className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
                 />
               </div>
+              {!slugId.trim() && (
+                <p className="text-[11px] text-red-600 font-medium">
+                  Slug URL (ID) wajib diisi dan tidak boleh kosong.
+                </p>
+              )}
             </div>
 
             {/* Slug EN */}
@@ -788,13 +785,25 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
               <div className="flex items-center justify-between">
                 <label className="block text-xs font-semibold text-[#344054] flex items-center gap-1.5">
                   <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-200">EN</span>
-                  Slug English
+                  Slug English <span className="text-red-500">*wajib</span>
                 </label>
-                {slugEn && (
-                  <span className="text-[10px] text-gray-400 font-mono">
-                    /en/blog/{slugEn}
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (slugId) setSlugEn(slugId);
+                    }}
+                    disabled={!slugId}
+                    className="text-[11px] text-[#465984] hover:text-[#354363] hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Samakan dengan ID
+                  </button>
+                  {slugEn && (
+                    <span className="text-[10px] text-gray-400 font-mono">
+                      /en/blog/{slugEn}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex rounded-lg shadow-xs">
                 <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
@@ -805,9 +814,15 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                   value={slugEn}
                   onChange={(e) => setSlugEn(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))}
                   placeholder="how-to-research-keywords"
+                  required
                   className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
                 />
               </div>
+              {!slugEn.trim() && (
+                <p className="text-[11px] text-red-600 font-medium">
+                  Slug URL (EN) wajib diisi dan tidak boleh kosong. Klik &quot;Samakan dengan ID&quot; jika ingin menyamakan.
+                </p>
+              )}
             </div>
 
             {selectedStatus === 'SCHEDULED' && (
@@ -1007,7 +1022,6 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
         title={currentTitle}
-        excerpt={currentExcerpt}
         content={currentContent}
         coverImageUrl={coverImageUrl}
         category={currentCategoryObj}

@@ -102,27 +102,35 @@ export default function CategoriesPage() {
       return;
     }
 
+    const cleanSlugId = (slugId.trim() || slug.trim() || primaryName)
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+    const cleanSlugEn = slugEn.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+
+    if (!cleanSlugId) {
+      setError('Slug URL Kategori (ID) wajib diisi dan tidak boleh kosong.');
+      return;
+    }
+    if (!cleanSlugEn) {
+      setError('Slug URL Kategori (EN) wajib diisi dan tidak boleh kosong. Klik "Samakan dengan ID" jika ingin nilai yang sama.');
+      return;
+    }
+
     try {
       setSaving(true);
       setError('');
-
-      const autoSlug =
-        slug.trim() ||
-        primaryName
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/(^-|-$)+/g, '');
-
-      const finalSlugId = slugId.trim() || autoSlug;
-      const finalSlugEn = slugEn.trim() || undefined;
 
       const payload = {
         name: primaryName,
         nameId: nameId.trim() || primaryName,
         nameEn: nameEn.trim() || undefined,
-        slug: autoSlug,
-        slugId: finalSlugId,
-        slugEn: finalSlugEn,
+        slug: cleanSlugId,
+        slugId: cleanSlugId,
+        slugEn: cleanSlugEn,
         description: descriptionId.trim() || descriptionEn.trim() || undefined,
         descriptionId: descriptionId.trim() || undefined,
         descriptionEn: descriptionEn.trim() || undefined,
@@ -141,8 +149,9 @@ export default function CategoriesPage() {
 
       setIsModalOpen(false);
       loadCategories();
-    } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan kategori');
+    } catch (err: unknown) {
+      const errorObj = err as Error;
+      setError(errorObj.message || 'Gagal menyimpan kategori');
     } finally {
       setSaving(false);
     }
@@ -272,7 +281,7 @@ export default function CategoriesPage() {
                       <div>/blog/kategori/{cat.slugId || cat.slug}</div>
                       {cat.slugEn && (
                         <div className="text-[10px] text-blue-600 font-mono mt-0.5">
-                          /en/blog/kategori/{cat.slugEn}
+                          /en/blog/category/{cat.slugEn}
                         </div>
                       )}
                     </td>
@@ -350,28 +359,80 @@ export default function CategoriesPage() {
                 </div>
               )}
 
-              {/* General Settings: Slug & Sort Order */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-4 border-b border-[#eaecf0]">
-                <div>
-                  <label className="block text-xs font-semibold text-[#344054] mb-1">
-                    Slug URL Kategori *
-                  </label>
-                  <div className="flex items-center">
-                    <span className="text-[11px] text-[#717680] bg-[#f2f4f7] px-2 py-2 border border-r-0 border-[#d5d7da] rounded-l-lg font-mono">
-                      /kategori/
-                    </span>
-                    <input
-                      type="text"
-                      value={slug}
-                      onChange={(e) => setSlug(e.target.value)}
-                      placeholder="seo"
-                      required
-                      className="w-full text-xs p-2 border border-[#d5d7da] rounded-r-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
-                    />
+              {/* General Settings: Dual Slugs & Sort Order */}
+              <div className="space-y-4 pb-4 border-b border-[#eaecf0]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Slug ID */}
+                  <div>
+                    <label className="block text-xs font-semibold text-[#344054] mb-1">
+                      Slug URL Kategori (ID) <span className="text-red-500">*wajib</span>
+                    </label>
+                    <div className="flex items-center">
+                      <span className="text-[11px] text-[#717680] bg-[#f2f4f7] px-2.5 py-2 border border-r-0 border-[#d5d7da] rounded-l-lg font-mono">
+                        /blog/kategori/
+                      </span>
+                      <input
+                        type="text"
+                        value={slugId}
+                        onChange={(e) => {
+                          const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+                          setSlugId(val);
+                          setSlug(val);
+                        }}
+                        placeholder="konten-visual"
+                        required
+                        className="w-full text-xs p-2 border border-[#d5d7da] rounded-r-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
+                      />
+                    </div>
+                    {!slugId.trim() && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1">
+                        Slug URL (ID) wajib diisi dan tidak boleh kosong.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Slug EN */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-[#344054]">
+                        Slug URL Kategori (EN) <span className="text-red-500">*wajib</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (slugId) setSlugEn(slugId);
+                        }}
+                        disabled={!slugId}
+                        className="text-[11px] text-[#465984] hover:text-[#354363] hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Samakan dengan ID
+                      </button>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-[11px] text-[#717680] bg-[#f2f4f7] px-2.5 py-2 border border-r-0 border-[#d5d7da] rounded-l-lg font-mono">
+                        /en/blog/category/
+                      </span>
+                      <input
+                        type="text"
+                        value={slugEn}
+                        onChange={(e) => {
+                          const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+                          setSlugEn(val);
+                        }}
+                        placeholder="visual-content"
+                        required
+                        className="w-full text-xs p-2 border border-[#d5d7da] rounded-r-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27] font-mono"
+                      />
+                    </div>
+                    {!slugEn.trim() && (
+                      <p className="text-[11px] text-red-600 font-medium mt-1">
+                        Slug URL (EN) wajib diisi dan tidak boleh kosong.
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                <div>
+                <div className="w-full sm:w-1/2 pr-0 sm:pr-2">
                   <label className="block text-xs font-semibold text-[#344054] mb-1">
                     Urutan Tampilan (Sort Order)
                   </label>
@@ -422,38 +483,25 @@ export default function CategoriesPage() {
                         type="text"
                         value={nameId}
                         onChange={(e) => {
-                          setNameId(e.target.value);
-                          if (!slug && !editingCategory) {
-                            const generated = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-                            setSlug(generated);
-                            setSlugId(generated);
+                          const val = e.target.value;
+                          setNameId(val);
+                          if (!editingCategory) {
+                            const generated = val
+                              .toLowerCase()
+                              .replace(/[^a-z0-9]+/g, '-')
+                              .replace(/(^-|-$)+/g, '');
+                            if (!slugId || slugId === slug) {
+                              setSlugId(generated);
+                              setSlug(generated);
+                            }
+                            if (!slugEn) {
+                              setSlugEn(generated);
+                            }
                           }
                         }}
                         placeholder="Contoh: SEO"
                         className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                       />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#344054] mb-1">
-                        Slug URL Kategori (ID)
-                      </label>
-                      <div className="flex rounded-lg shadow-xs">
-                        <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
-                          /blog/kategori/
-                        </span>
-                        <input
-                          type="text"
-                          value={slugId}
-                          onChange={(e) => {
-                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
-                            setSlugId(val);
-                            setSlug(val);
-                          }}
-                          placeholder="media-sosial"
-                          className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
-                        />
-                      </div>
                     </div>
 
                     <div>
@@ -502,10 +550,47 @@ export default function CategoriesPage() {
                   </div>
                 ) : (
                   <div className="pt-4 space-y-4">
+                    {/* Quick Sync Banner */}
+                    <div className="flex items-center justify-between p-3 bg-[#f0f4fd] border border-[#d2defa] rounded-lg">
+                      <div>
+                        <div className="text-xs font-semibold text-[#182a4d]">
+                          Salin Seluruh Isian dari Bahasa Indonesia
+                        </div>
+                        <div className="text-[11px] text-[#4e6594]">
+                          Auto-isi Nama, Deskripsi, dan Meta Tags EN dari data ID.
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (nameId) setNameEn(nameId);
+                          if (slugId && !slugEn) setSlugEn(slugId);
+                          if (descriptionId) setDescriptionEn(descriptionId);
+                          if (metaTitleId) setMetaTitleEn(metaTitleId);
+                          if (metaDescriptionId) setMetaDescriptionEn(metaDescriptionId);
+                        }}
+                        className="text-xs bg-[#465984] hover:bg-[#354363] text-white px-3 py-1.5 rounded-lg font-medium transition cursor-pointer shadow-xs whitespace-nowrap"
+                      >
+                        Samakan Semua dengan ID
+                      </button>
+                    </div>
+
                     <div>
-                      <label className="block text-xs font-semibold text-[#344054] mb-1">
-                        Category Name (EN)
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-[#344054]">
+                          Category Name (EN) <span className="text-red-500">*wajib</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (nameId) setNameEn(nameId);
+                          }}
+                          disabled={!nameId}
+                          className="text-[11px] text-[#465984] hover:text-[#354363] hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Samakan dengan ID
+                        </button>
+                      </div>
                       <input
                         type="text"
                         value={nameEn}
@@ -521,30 +606,21 @@ export default function CategoriesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-[#344054] mb-1">
-                        Category Slug URL (EN)
-                      </label>
-                      <div className="flex rounded-lg shadow-xs">
-                        <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
-                          /en/blog/kategori/
-                        </span>
-                        <input
-                          type="text"
-                          value={slugEn}
-                          onChange={(e) => {
-                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
-                            setSlugEn(val);
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-[#344054]">
+                          Topic Description (EN)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (descriptionId) setDescriptionEn(descriptionId);
                           }}
-                          placeholder="social-media"
-                          className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
-                        />
+                          disabled={!descriptionId}
+                          className="text-[11px] text-[#465984] hover:text-[#354363] hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Samakan dengan ID
+                        </button>
                       </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-[#344054] mb-1">
-                        Topic Description (EN)
-                      </label>
                       <textarea
                         rows={2}
                         value={descriptionEn}
@@ -560,9 +636,21 @@ export default function CategoriesPage() {
                         <span>SEO Meta Tags (EN)</span>
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-[#535862] mb-1">
-                          Meta Title (EN)
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-medium text-[#535862]">
+                            Meta Title (EN)
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (metaTitleId) setMetaTitleEn(metaTitleId);
+                            }}
+                            disabled={!metaTitleId}
+                            className="text-[11px] text-[#465984] hover:text-[#354363] hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Samakan dengan ID
+                          </button>
+                        </div>
                         <input
                           type="text"
                           value={metaTitleEn}
@@ -572,9 +660,21 @@ export default function CategoriesPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-[#535862] mb-1">
-                          Meta Description (EN)
-                        </label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="block text-xs font-medium text-[#535862]">
+                            Meta Description (EN)
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (metaDescriptionId) setMetaDescriptionEn(metaDescriptionId);
+                            }}
+                            disabled={!metaDescriptionId}
+                            className="text-[11px] text-[#465984] hover:text-[#354363] hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Samakan dengan ID
+                          </button>
+                        </div>
                         <textarea
                           rows={2}
                           value={metaDescriptionEn}

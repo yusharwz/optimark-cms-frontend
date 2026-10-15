@@ -16,7 +16,7 @@ interface ArticlePreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  excerpt: string;
+  excerpt?: string;
   content: string;
   coverImageUrl: string;
   category?: Category | null;
@@ -31,7 +31,6 @@ export function ArticlePreviewModal({
   isOpen,
   onClose,
   title,
-  excerpt,
   content,
   coverImageUrl,
   category,
@@ -122,11 +121,6 @@ export function ArticlePreviewModal({
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#181d27] leading-[1.15]">
               {title || 'Judul Artikel Anda Ditampilkan di Sini'}
             </h1>
-
-            <p className="text-lg text-[#535862] leading-relaxed">
-              {excerpt ||
-                'Ringkasan eksekutif dan cuplikan artikel yang memikat pembaca akan tampil tepat di bawah judul utama ini.'}
-            </p>
 
             {/* Author Meta Row */}
             <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-[#f2f4f7] text-xs text-[#535862]">

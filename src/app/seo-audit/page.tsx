@@ -741,7 +741,7 @@ export default function SeoAuditPage() {
                     const idOk = Boolean(art.slugId || art.slug);
                     const enOk = Boolean(art.slugEn);
                     const metaOk = Boolean(art.metaTitle || art.title);
-                    const descOk = Boolean(art.metaDescription || art.excerpt);
+                    const descOk = Boolean(art.metaDescription);
 
                     return (
                       <tr key={art.id} className="hover:bg-[#f9fafb] transition">
