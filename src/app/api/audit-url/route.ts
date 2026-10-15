@@ -47,9 +47,10 @@ export async function GET(request: NextRequest) {
       responseTimeMs,
       html,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as Error;
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch target URL' },
+      { error: err?.message || 'Failed to fetch target URL' },
       { status: 500 }
     );
   }

@@ -9,10 +9,7 @@ import {
   AlertTriangle,
   RefreshCw01,
   Globe01,
-  File06,
-  Image03,
   SearchLg,
-  Eye,
   Edit01,
 } from '@untitledui/icons';
 import { Header } from '@/components/Header';
@@ -65,7 +62,6 @@ interface AuditResult {
 export default function SeoAuditPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<'live-audit' | 'articles' | 'sitemaps'>('live-audit');
 
@@ -79,7 +75,6 @@ export default function SeoAuditPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        setLoading(true);
         const [artRes, mediaRes] = await Promise.all([
           api.getArticles({ limit: 100 }),
           api.getMedia(),
@@ -88,8 +83,6 @@ export default function SeoAuditPage() {
         setMediaList(mediaRes || []);
       } catch (err) {
         console.error('Failed to load SEO audit data', err);
-      } finally {
-        setLoading(false);
       }
     }
     loadData();
