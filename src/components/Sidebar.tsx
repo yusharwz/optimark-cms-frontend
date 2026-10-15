@@ -11,6 +11,7 @@ import {
   Users01,
   SwitchHorizontal01,
   Image03,
+  BarChart01,
   Plus,
   LogOut01,
   Lock01,
@@ -71,6 +72,12 @@ export function Sidebar({ onNavigate, isMobile = false }: SidebarProps = {}) {
       href: '/redirects',
       icon: SwitchHorizontal01,
       active: pathname.startsWith('/redirects'),
+    },
+    {
+      name: 'Audit & Skor SEO',
+      href: '/seo-audit',
+      icon: BarChart01,
+      active: pathname.startsWith('/seo-audit'),
     },
     {
       name: 'Media & Gambar',
