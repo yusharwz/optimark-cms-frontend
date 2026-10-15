@@ -11,15 +11,30 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const targetObj = new URL(target);
+    let fetchUrl = target;
+
+    const reqHeaders: Record<string, string> = {
+      'User-Agent': 'Mozilla/5.0 (compatible; OptimarkSeoAuditBot/1.0; +https://optimark.ai)',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Host': targetObj.host,
+      'x-forwarded-host': targetObj.host,
+      'x-forwarded-proto': 'https',
+    };
+
+    // Anti Hairpin NAT: If calling internal landing page container
+    if (
+      targetObj.hostname === 'optimark-staging-landing.dritech.co.id' ||
+      targetObj.hostname.includes('landing')
+    ) {
+      fetchUrl = `http://landing-page:3000${targetObj.pathname}${targetObj.search}`;
+    }
+
     const startTime = performance.now();
-    const res = await fetch(target, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; OptimarkSeoAuditBot/1.0; +https://optimark.ai)',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
-      },
+    const res = await fetch(fetchUrl, {
+      headers: reqHeaders,
       redirect: 'follow',
-      signal: AbortSignal.timeout(6000),
+      signal: AbortSignal.timeout(8000),
     });
     const endTime = performance.now();
     const responseTimeMs = Math.round(endTime - startTime);
