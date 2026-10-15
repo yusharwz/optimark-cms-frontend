@@ -171,6 +171,15 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
+  // Real-time dynamic sync of Cover Image Alt to Cloudflare R2 / cms_media table
+  useEffect(() => {
+    if (!coverImageUrl || !coverImageAlt?.trim()) return;
+    const timer = setTimeout(() => {
+      api.syncMediaAlt(coverImageUrl, coverImageAlt.trim()).catch(() => null);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [coverImageUrl, coverImageAlt]);
+
   // Intercept browser back navigation (popstate)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1039,6 +1048,12 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
                 type="text"
                 value={coverImageAlt}
                 onChange={(e) => setCoverImageAlt(e.target.value)}
+                onBlur={(e) => {
+                  const val = e.target.value.trim();
+                  if (coverImageUrl && val) {
+                    api.syncMediaAlt(coverImageUrl, val).catch(() => null);
+                  }
+                }}
                 placeholder="Deskripsi gambar untuk aksesibilitas dan SEO gambar Google..."
                 className="w-full px-3 py-2 text-xs border border-[#d5d7da] rounded-lg shadow-xs focus:ring-2 focus:ring-[#465984]"
               />
