@@ -14,8 +14,9 @@ import { compressImageToWebp } from './image-compression';
 
 export function getLandingUrl(path: string = ''): string {
   const cleanPath = path ? (path.startsWith('/') ? path : `/${path}`) : '';
-  if (process.env.NEXT_PUBLIC_LANDING_URL) {
-    return `${process.env.NEXT_PUBLIC_LANDING_URL.replace(/\/+$/, '')}${cleanPath}`;
+  const envLanding = process.env.NEXT_PUBLIC_LANDING_URL || process.env.NEXT_PUBLIC_SITE_URL;
+  if (envLanding) {
+    return `${envLanding.replace(/\/+$/, '')}${cleanPath}`;
   }
   if (typeof window !== 'undefined') {
     if (window.location.hostname.includes('staging') || window.location.hostname.includes('dritech.co.id')) {
@@ -35,6 +36,9 @@ function getApiBase(): string {
   if (typeof window !== 'undefined') {
     if (window.location.hostname.includes('dritech.co.id')) {
       return 'https://optimark-staging-api.dritech.co.id/api';
+    }
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:3001/api';
     }
   }
   return 'http://localhost:3001/api';
