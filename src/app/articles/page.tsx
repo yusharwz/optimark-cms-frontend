@@ -267,14 +267,14 @@ export default function ArticlesPage() {
                           </Link>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-[11px] text-[#717680] font-mono truncate">
-                              /blog/{item.slug}
+                              /blog/{item.slugId || item.slug}
                             </span>
                             <div className="flex items-center gap-1 shrink-0">
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#f2f4f7] text-[#344054]" title="Versi Bahasa Indonesia">
+                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#f2f4f7] text-[#344054]" title={`ID: /blog/${item.slugId || item.slug}`}>
                                 ID
                               </span>
-                              {item.translations?.some((t) => t.locale === 'en' && t.title) ? (
-                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title="Versi English Tersedia">
+                              {item.slugEn || item.translations?.some((t) => t.locale === 'en' && (t.slug || t.title)) ? (
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200" title={`EN: /en/blog/${item.slugEn || item.translations?.find((t) => t.locale === 'en')?.slug || item.slug}`}>
                                   EN
                                 </span>
                               ) : (
@@ -349,15 +349,30 @@ export default function ArticlesPage() {
                     <td className="py-3.5 px-4 text-right">
                       <div className="inline-flex items-center gap-1.5">
                         {item.status === 'PUBLISHED' && (
-                          <a
-                            href={getLandingUrl(`/blog/${item.slug}`)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Buka artikel live di Landing Page"
-                            className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#535862] transition cursor-pointer"
-                          >
-                            <Eye className="size-3.5 text-[#465984]" />
-                          </a>
+                          <div className="inline-flex items-center gap-1">
+                            <a
+                              href={getLandingUrl(`/blog/${item.slugId || item.slug}`)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={`Buka live ID (/blog/${item.slugId || item.slug})`}
+                              className="p-1.5 rounded hover:bg-[#f2f4f7] text-[#535862] transition cursor-pointer flex items-center gap-0.5"
+                            >
+                              <Eye className="size-3.5 text-[#465984]" />
+                              <span className="text-[10px] font-bold text-[#465984]">ID</span>
+                            </a>
+                            {item.slugEn && (
+                              <a
+                                href={getLandingUrl(`/en/blog/${item.slugEn}`)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`Buka live EN (/en/blog/${item.slugEn})`}
+                                className="p-1.5 rounded hover:bg-blue-50 text-blue-700 transition cursor-pointer flex items-center gap-0.5"
+                              >
+                                <Eye className="size-3.5 text-blue-700" />
+                                <span className="text-[10px] font-bold text-blue-700">EN</span>
+                              </a>
+                            )}
+                          </div>
                         )}
                         {item.status !== 'PUBLISHED' && (
                           <button

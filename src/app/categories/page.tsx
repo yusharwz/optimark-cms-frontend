@@ -21,6 +21,8 @@ export default function CategoriesPage() {
 
   // Form fields
   const [slug, setSlug] = useState('');
+  const [slugId, setSlugId] = useState('');
+  const [slugEn, setSlugEn] = useState('');
   const [sortOrder, setSortOrder] = useState(0);
 
   // ID fields
@@ -57,6 +59,8 @@ export default function CategoriesPage() {
   const openCreateModal = () => {
     setEditingCategory(null);
     setSlug('');
+    setSlugId('');
+    setSlugEn('');
     setSortOrder(categories.length + 1);
     setNameId('');
     setDescriptionId('');
@@ -74,6 +78,8 @@ export default function CategoriesPage() {
   const openEditModal = (cat: Category) => {
     setEditingCategory(cat);
     setSlug(cat.slug);
+    setSlugId(cat.slugId || cat.slug || '');
+    setSlugEn(cat.slugEn || '');
     setSortOrder(cat.sortOrder ?? 0);
     setNameId(cat.nameId || cat.name || '');
     setDescriptionId(cat.descriptionId || cat.description || '');
@@ -107,11 +113,16 @@ export default function CategoriesPage() {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)+/g, '');
 
+      const finalSlugId = slugId.trim() || autoSlug;
+      const finalSlugEn = slugEn.trim() || undefined;
+
       const payload = {
         name: primaryName,
         nameId: nameId.trim() || primaryName,
         nameEn: nameEn.trim() || undefined,
         slug: autoSlug,
+        slugId: finalSlugId,
+        slugEn: finalSlugEn,
         description: descriptionId.trim() || descriptionEn.trim() || undefined,
         descriptionId: descriptionId.trim() || undefined,
         descriptionEn: descriptionEn.trim() || undefined,
@@ -258,7 +269,12 @@ export default function CategoriesPage() {
                     </td>
 
                     <td className="py-3.5 px-4 font-mono text-[11px] text-[#717680]">
-                      /blog/kategori/{cat.slug}
+                      <div>/blog/kategori/{cat.slugId || cat.slug}</div>
+                      {cat.slugEn && (
+                        <div className="text-[10px] text-blue-600 font-mono mt-0.5">
+                          /en/blog/kategori/{cat.slugEn}
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -408,12 +424,36 @@ export default function CategoriesPage() {
                         onChange={(e) => {
                           setNameId(e.target.value);
                           if (!slug && !editingCategory) {
-                            setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+                            const generated = e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                            setSlug(generated);
+                            setSlugId(generated);
                           }
                         }}
                         placeholder="Contoh: SEO"
                         className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#344054] mb-1">
+                        Slug URL Kategori (ID)
+                      </label>
+                      <div className="flex rounded-lg shadow-xs">
+                        <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
+                          /blog/kategori/
+                        </span>
+                        <input
+                          type="text"
+                          value={slugId}
+                          onChange={(e) => {
+                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+                            setSlugId(val);
+                            setSlug(val);
+                          }}
+                          placeholder="media-sosial"
+                          className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
+                        />
+                      </div>
                     </div>
 
                     <div>
@@ -469,10 +509,36 @@ export default function CategoriesPage() {
                       <input
                         type="text"
                         value={nameEn}
-                        onChange={(e) => setNameEn(e.target.value)}
+                        onChange={(e) => {
+                          setNameEn(e.target.value);
+                          if (!slugEn && !editingCategory) {
+                            setSlugEn(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '-'));
+                          }
+                        }}
                         placeholder="Example: SEO"
                         className="w-full text-xs p-2.5 border border-[#d5d7da] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#465984] text-[#181d27]"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-[#344054] mb-1">
+                        Category Slug URL (EN)
+                      </label>
+                      <div className="flex rounded-lg shadow-xs">
+                        <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
+                          /en/blog/kategori/
+                        </span>
+                        <input
+                          type="text"
+                          value={slugEn}
+                          onChange={(e) => {
+                            const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+                            setSlugEn(val);
+                          }}
+                          placeholder="social-media"
+                          className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
+                        />
+                      </div>
                     </div>
 
                     <div>

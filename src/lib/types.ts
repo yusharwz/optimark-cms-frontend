@@ -14,6 +14,8 @@ export interface Category {
   nameId?: string | null;
   nameEn?: string | null;
   slug: string;
+  slugId?: string | null;
+  slugEn?: string | null;
   description?: string | null;
   descriptionId?: string | null;
   descriptionEn?: string | null;
@@ -71,6 +73,7 @@ export interface ArticleTranslation {
   articleId?: string;
   locale: 'id' | 'en';
   title: string;
+  slug?: string | null;
   excerpt?: string | null;
   content: string;
   metaTitle?: string | null;
@@ -81,6 +84,12 @@ export interface Article {
   id: string;
   title: string;
   slug: string;
+  slugId?: string | null;
+  slugEn?: string | null;
+  alternateSlugs?: {
+    id: string;
+    en: string;
+  };
   excerpt?: string | null;
   content: string;
   metaTitle?: string | null;

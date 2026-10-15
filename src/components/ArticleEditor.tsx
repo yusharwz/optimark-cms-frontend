@@ -61,8 +61,10 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const [metaTitleEn, setMetaTitleEn] = useState(initialEn?.metaTitle || '');
   const [metaDescriptionEn, setMetaDescriptionEn] = useState(initialEn?.metaDescription || '');
 
-  // Shared Core Fields
+  // Shared Core Fields & Multilingual Slugs
   const [slug, setSlug] = useState(initialData?.slug || '');
+  const [slugId, setSlugId] = useState(initialId?.slug || initialData?.slugId || initialData?.slug || '');
+  const [slugEn, setSlugEn] = useState(initialEn?.slug || initialData?.slugEn || '');
   const [canonicalUrl, setCanonicalUrl] = useState(initialData?.canonicalUrl || '');
   const [coverImageUrl, setCoverImageUrl] = useState(initialData?.coverImageUrl || '');
   const [coverImageAlt, setCoverImageAlt] = useState(initialData?.coverImageAlt || '');
@@ -125,6 +127,8 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
     excerptId,
     contentId,
     slug,
+    slugId,
+    slugEn,
     coverImageUrl,
     categoryId,
     authorId,
@@ -207,15 +211,23 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const handleTitleChange = (val: string) => {
     if (activeLocale === 'id') {
       setTitleId(val);
-      if (!initialData && (!slug || slug === '')) {
+      if (!initialData && (!slugId || slugId === '')) {
         const autoSlug = val
           .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/[^a-z0-9-]+/g, '-')
           .replace(/(^-|-$)+/g, '');
+        setSlugId(autoSlug);
         setSlug(autoSlug);
       }
     } else {
       setTitleEn(val);
+      if (!initialData && (!slugEn || slugEn === '')) {
+        const autoSlug = val
+          .toLowerCase()
+          .replace(/[^a-z0-9-]+/g, '-')
+          .replace(/(^-|-$)+/g, '');
+        setSlugEn(autoSlug);
+      }
     }
   };
 
@@ -261,7 +273,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
   const validateMandatoryFields = (): string[] => {
     const missing: string[] = [];
     if (!titleId.trim() && !titleEn.trim()) missing.push('Judul Artikel');
-    if (!slug.trim()) missing.push('Slug URL');
+    if (!slugId.trim() && !slug.trim()) missing.push('Slug URL (ID)');
     if (!categoryId) missing.push('Kategori Blog');
     if (!authorId) missing.push('Penulis (Author)');
     if (!coverImageUrl.trim()) missing.push('Gambar Sampul (Cover Image)');
@@ -311,9 +323,13 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         ? 'PUBLISHED'
         : (targetStatus as 'DRAFT' | 'PUBLISHED' | 'SCHEDULED' | 'ARCHIVED');
 
+      const primarySlug = (slugId.trim() || slug.trim() || titleId).toLowerCase().replace(/[^a-z0-9-]+/g, '');
+
       const payload: any = {
         title: titleId || titleEn,
-        slug: slug.trim() || undefined,
+        slug: primarySlug || undefined,
+        slugId: slugId.trim() || primarySlug || undefined,
+        slugEn: slugEn.trim() || undefined,
         excerpt: excerptId || excerptEn || undefined,
         content: contentId || contentEn || '',
         metaTitle: metaTitleId || metaTitleEn || undefined,
@@ -332,6 +348,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
         translations: {
           id: {
             title: titleId,
+            slug: slugId.trim() || primarySlug || undefined,
             excerpt: excerptId,
             content: contentId,
             metaTitle: metaTitleId,
@@ -339,6 +356,7 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
           },
           en: {
             title: titleEn,
+            slug: slugEn.trim() || undefined,
             excerpt: excerptEn,
             content: contentEn,
             metaTitle: metaTitleEn,
@@ -725,25 +743,68 @@ export function ArticleEditor({ initialData }: ArticleEditorProps) {
 
         {/* Right Column: Taxonomy, E-E-A-T, Media, Settings (4 Cols) */}
         <div className="lg:col-span-4 space-y-6">
-          {/* URL Slug Setting */}
+          {/* URL Slug Setting (Multilingual) */}
           <div className="bg-white p-5 rounded-xl border border-[#eaecf0] shadow-xs space-y-4">
-            <h3 className="text-sm font-semibold text-[#181d27] border-b border-[#eaecf0] pb-3">
-              Parameter URL & Slug
+            <h3 className="text-sm font-semibold text-[#181d27] border-b border-[#eaecf0] pb-3 flex items-center justify-between">
+              <span>Parameter URL & Slug</span>
+              <span className="text-[10px] bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded-full border border-blue-200">
+                Multilingual
+              </span>
             </h3>
 
+            {/* Slug ID */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-[#344054]">
-                Slug URL <span className="text-red-500">*wajib</span>
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[#344054] flex items-center gap-1.5">
+                  <span className="text-[10px] bg-red-50 text-red-700 font-bold px-1.5 py-0.5 rounded border border-red-200">ID</span>
+                  Slug Indonesia <span className="text-red-500">*wajib</span>
+                </label>
+                {slugId && (
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    /blog/{slugId}
+                  </span>
+                )}
+              </div>
               <div className="flex rounded-lg shadow-xs">
                 <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
                   /blog/
                 </span>
                 <input
                   type="text"
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))}
+                  value={slugId}
+                  onChange={(e) => {
+                    const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, '');
+                    setSlugId(val);
+                    setSlug(val);
+                  }}
                   placeholder="riset-keyword-lokal"
+                  className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
+                />
+              </div>
+            </div>
+
+            {/* Slug EN */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-[#344054] flex items-center gap-1.5">
+                  <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-1.5 py-0.5 rounded border border-blue-200">EN</span>
+                  Slug English
+                </label>
+                {slugEn && (
+                  <span className="text-[10px] text-gray-400 font-mono">
+                    /en/blog/{slugEn}
+                  </span>
+                )}
+              </div>
+              <div className="flex rounded-lg shadow-xs">
+                <span className="inline-flex items-center px-2.5 rounded-l-lg border border-r-0 border-[#d5d7da] bg-[#f8f9fa] text-[#717680] text-xs font-mono">
+                  /en/blog/
+                </span>
+                <input
+                  type="text"
+                  value={slugEn}
+                  onChange={(e) => setSlugEn(e.target.value.toLowerCase().replace(/[^a-z0-9-]+/g, ''))}
+                  placeholder="how-to-research-keywords"
                   className="flex-1 min-w-0 block w-full px-3 py-2 text-xs font-mono border border-[#d5d7da] rounded-r-lg focus:ring-2 focus:ring-[#465984]"
                 />
               </div>
