@@ -12,7 +12,7 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const [limit, setLimit] = useState(25);
 
   // Modal form state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -300,6 +300,7 @@ export default function CategoriesPage() {
             totalItems={filteredCategories.length}
             itemsPerPage={limit}
             onPageChange={setPage}
+            onItemsPerPageChange={setLimit}
           />
         </div>
       </div>

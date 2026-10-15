@@ -15,7 +15,7 @@ export default function MediaPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 12;
+  const [limit, setLimit] = useState(25);
 
   // Edit Alt Text state
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -235,6 +235,7 @@ export default function MediaPage() {
                 totalItems={filteredMedia.length}
                 itemsPerPage={limit}
                 onPageChange={setPage}
+                onItemsPerPageChange={setLimit}
               />
             </div>
           </div>

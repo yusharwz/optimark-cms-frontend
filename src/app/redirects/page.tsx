@@ -24,7 +24,7 @@ export default function RedirectsPage() {
   const [filterStatus, setFilterStatus] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const [limit, setLimit] = useState(25);
 
   // Form State
   const [isAdding, setIsAdding] = useState(false);
@@ -429,6 +429,7 @@ export default function RedirectsPage() {
             totalItems={filteredRedirects.length}
             itemsPerPage={limit}
             onPageChange={setPage}
+            onItemsPerPageChange={setLimit}
           />
         </div>
       </div>

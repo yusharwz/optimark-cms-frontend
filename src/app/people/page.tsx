@@ -25,7 +25,7 @@ export default function PeoplePage() {
   const [filterType, setFilterType] = useState<'ALL' | PersonType>('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const [limit, setLimit] = useState(25);
 
   // Form Modal State
   const [isAdding, setIsAdding] = useState(false);
@@ -515,6 +515,7 @@ export default function PeoplePage() {
               totalItems={filteredPeople.length}
               itemsPerPage={limit}
               onPageChange={setPage}
+              onItemsPerPageChange={setLimit}
             />
           </>
         )}

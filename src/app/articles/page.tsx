@@ -29,7 +29,7 @@ export default function ArticlesPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 25;
+  const [limit, setLimit] = useState(25);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,18 +39,18 @@ export default function ArticlesPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const fetchArticles = async (targetPage = page, querySearch = debouncedSearch) => {
+  const fetchArticles = async (targetPage = page, querySearch = debouncedSearch, targetLimit = limit) => {
     try {
       setLoading(true);
       const res = await api.getArticles({
         search: querySearch || undefined,
         status: statusFilter || undefined,
         page: targetPage,
-        limit,
+        limit: targetLimit,
       });
       setArticles(res.items);
       setTotal(res.total);
-      setTotalPages(res.totalPages || Math.ceil(res.total / limit) || 1);
+      setTotalPages(res.totalPages || Math.ceil(res.total / targetLimit) || 1);
     } catch (err) {
       console.error('Failed to fetch articles:', err);
     } finally {
@@ -59,8 +59,8 @@ export default function ArticlesPage() {
   };
 
   useEffect(() => {
-    fetchArticles(page, debouncedSearch);
-  }, [page, statusFilter, debouncedSearch]);
+    fetchArticles(page, debouncedSearch, limit);
+  }, [page, statusFilter, debouncedSearch, limit]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -400,6 +400,7 @@ export default function ArticlesPage() {
             totalItems={total}
             itemsPerPage={limit}
             onPageChange={setPage}
+            onItemsPerPageChange={setLimit}
           />
         </div>
       </div>

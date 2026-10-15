@@ -9,6 +9,8 @@ interface TablePaginationProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (limit: number) => void;
+  pageSizeOptions?: number[];
 }
 
 export function TablePagination({
@@ -17,6 +19,8 @@ export function TablePagination({
   totalItems,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
+  pageSizeOptions = [25, 50, 100, 150],
 }: TablePaginationProps) {
   if (totalItems === 0) return null;
 
@@ -37,10 +41,34 @@ export function TablePagination({
 
   return (
     <div className="px-4 sm:px-6 py-3.5 bg-white border-t border-[#eaecf0] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#535862]">
-      <div>
-        Menampilkan <span className="font-semibold text-[#181d27]">{startItem}</span> -{' '}
-        <span className="font-semibold text-[#181d27]">{endItem}</span> dari{' '}
-        <span className="font-semibold text-[#181d27]">{totalItems}</span> entri
+      <div className="flex flex-wrap items-center gap-3">
+        <div>
+          Menampilkan <span className="font-semibold text-[#181d27]">{startItem}</span> -{' '}
+          <span className="font-semibold text-[#181d27]">{endItem}</span> dari{' '}
+          <span className="font-semibold text-[#181d27]">{totalItems}</span> entri
+        </div>
+
+        {onItemsPerPageChange && (
+          <div className="flex items-center gap-1.5 text-xs text-[#535862]">
+            <span>Tampilkan</span>
+            <select
+              value={itemsPerPage}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                onItemsPerPageChange(val);
+                onPageChange(1);
+              }}
+              className="bg-white border border-[#d5d7da] rounded-lg px-2 py-1 text-xs font-medium text-[#344054] focus:outline-none focus:ring-1 focus:ring-[#465984] cursor-pointer"
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+            <span>per halaman</span>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-1.5">

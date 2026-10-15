@@ -36,7 +36,7 @@ export default function CommentsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const [limit, setLimit] = useState(25);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -440,6 +440,7 @@ export default function CommentsPage() {
                 totalItems={comments.length}
                 itemsPerPage={limit}
                 onPageChange={setPage}
+                onItemsPerPageChange={setLimit}
               />
             </div>
           </div>
