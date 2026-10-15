@@ -101,16 +101,11 @@ export default function SeoAuditPage() {
     setTargetUrl(urlToTest);
 
     try {
-      const startTime = performance.now();
-      // Test fetching from client or via proxy
-      const res = await fetch(urlToTest, { method: 'GET', mode: 'cors' }).catch(() => null);
-      const endTime = performance.now();
-      const responseTimeMs = Math.round(endTime - startTime);
-
-      let html = '';
-      if (res && res.ok) {
-        html = await res.text();
-      }
+      // Use internal server proxy to bypass browser CORS and obtain full raw HTML
+      const proxyRes = await fetch(`/api/audit-url?url=${encodeURIComponent(urlToTest)}`);
+      const proxyData = await proxyRes.json();
+      const responseTimeMs = proxyData.responseTimeMs || 120;
+      const html = proxyData.html || '';
 
       // Parse metadata elements using DOMParser
       const parser = new DOMParser();
@@ -192,7 +187,7 @@ export default function SeoAuditPage() {
 
       setAuditResult({
         url: urlToTest,
-        statusCode: res ? res.status : 200,
+        statusCode: proxyData.statusCode || 200,
         responseTimeMs: responseTimeMs || 120,
         canonical: {
           value: canonicalVal || `${urlToTest}`,
