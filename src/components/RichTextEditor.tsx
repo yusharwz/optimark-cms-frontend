@@ -349,6 +349,56 @@ export function RichTextEditor({
     fileInputRef.current?.click();
   };
 
+  const handlePaste = async (e: React.ClipboardEvent<HTMLDivElement>) => {
+    const clipboardData = e.clipboardData;
+    if (!clipboardData) return;
+
+    // Check for pasted image files (screenshots, clipboard image data)
+    const items = Array.from(clipboardData.items || []);
+    const imageItem = items.find((item) => item.type.startsWith('image/'));
+
+    if (imageItem) {
+      e.preventDefault();
+      const file = imageItem.getAsFile();
+      if (!file) return;
+
+      const defaultAlt = `Gambar Screenshot ${new Date().toLocaleDateString('id-ID')}`;
+      const userAlt = window.prompt('Masukkan Alt Text Gambar (SEO Image Alt Tag):', defaultAlt);
+      if (userAlt === null) return;
+
+      setUploadingImage(true);
+      try {
+        const cleanAlt = userAlt.trim() || defaultAlt;
+        const targetSlug = `pasted-img-${Date.now()}`;
+        const media = await api.uploadMedia(file, cleanAlt, true, targetSlug);
+        const figureHtml = createFigureHtml(media.url, cleanAlt) + '<p><br></p>';
+
+        if (editorRef.current) {
+          editorRef.current.focus();
+          document.execCommand('insertHTML', false, figureHtml);
+          handleInput();
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Gagal mengunggah gambar hasil paste';
+        alert(msg);
+      } finally {
+        setUploadingImage(false);
+      }
+      return;
+    }
+
+    // Check for pasted HTML containing raw data:image base64
+    const pastedHtml = clipboardData.getData('text/html');
+    if (pastedHtml && /data:image\/(?:png|jpeg|jpg|webp|gif);base64,/i.test(pastedHtml)) {
+      e.preventDefault();
+      const text = clipboardData.getData('text/plain');
+      document.execCommand('insertText', false, text);
+      handleInput();
+      alert('Pemberitahuan: Gambar raw base64 dicegah demi performa. Silakan gunakan tombol Image atau Paste file gambar langsung untuk upload otomatis ke CDN.');
+      return;
+    }
+  };
+
   const handleEditorClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
 
@@ -608,6 +658,7 @@ export function RichTextEditor({
         ref={editorRef}
         contentEditable
         onInput={handleInput}
+        onPaste={handlePaste}
         onClick={handleEditorClick}
         onKeyUp={updateFormatState}
         onMouseUp={updateFormatState}
