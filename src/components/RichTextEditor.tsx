@@ -196,20 +196,26 @@ function htmlToMarkdown(element: HTMLElement): string {
       if (src) parts.push(`![${alt}](${src})`);
       return;
     } else if (tag === 'h1') {
-      parts.push(`# ${inlineContent(el)}`);
+      const text = inlineContent(el).trim();
+      if (text) parts.push(`# ${text}`);
     } else if (tag === 'h2') {
-      parts.push(`## ${inlineContent(el)}`);
+      const text = inlineContent(el).trim();
+      if (text) parts.push(`## ${text}`);
     } else if (tag === 'h3') {
-      parts.push(`### ${inlineContent(el)}`);
+      const text = inlineContent(el).trim();
+      if (text) parts.push(`### ${text}`);
     } else if (tag === 'blockquote') {
-      parts.push(`> ${inlineContent(el)}`);
+      const text = inlineContent(el).trim();
+      if (text) parts.push(`> ${text}`);
     } else if (tag === 'ul') {
       el.querySelectorAll('li').forEach((li) => {
-        parts.push(`- ${inlineContent(li)}`);
+        const text = inlineContent(li).trim();
+        if (text) parts.push(`- ${text}`);
       });
     } else if (tag === 'ol') {
       el.querySelectorAll('li').forEach((li, idx) => {
-        parts.push(`${idx + 1}. ${inlineContent(li)}`);
+        const text = inlineContent(li).trim();
+        if (text) parts.push(`${idx + 1}. ${text}`);
       });
     } else if (tag === 'p' || tag === 'div') {
       const text = inlineContent(el).trim();
