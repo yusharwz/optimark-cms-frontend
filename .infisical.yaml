@@ -1,0 +1,10 @@
+version: 1
+general:
+    domain: https://infisical.usahakreatif.co.id/api
+secrets-management:
+    project-id: 4daccef1-3d84-4114-b3cd-9b2fd27503bc
+    default-environment: dev
+    mappings:
+        git-branch-to-environment:
+            staging: staging
+            main: prod

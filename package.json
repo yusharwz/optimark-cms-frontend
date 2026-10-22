@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "secrets:pull": "infisical export --env=dev > .env.local",
+    "secrets:pull:staging": "infisical export --env=staging > .env.local",
+    "secrets:pull:prod": "infisical export --env=prod > .env.local",
+    "secrets:push:dev": "infisical secrets set --file=.env.local --env=dev",
+    "secrets:push:staging": "infisical secrets set --file=.env.local --env=staging",
+    "secrets:push:prod": "infisical secrets set --file=.env.local --env=prod"
   },
   "dependencies": {
     "@types/markdown-it": "^14.2.0",
